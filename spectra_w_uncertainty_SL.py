@@ -30,19 +30,33 @@ def wn_validation():
 
     return wn_validation_flag, wn_change_flag
 
-species_options = ['CH4 - HITRAN', 'H2O - HITRAN', 'CO2 - HITRAN', 'CO - HITRAN']
+def change_wn_range():
+    if st.session_state.selected_species == '(12)CH4 - HITRAN':
+        st.session_state.wn_start = 1331
+        st.session_state.wn_end = 1334
+    elif st.session_state.selected_species == 'H2(16)O - HITRAN':
+        st.session_state.wn_start = 1505
+        st.session_state.wn_end = 1510
+    elif st.session_state.selected_species == '(12)CO2 - HITRAN':
+        st.session_state.wn_start = 2300
+        st.session_state.wn_end = 2305
+    elif st.session_state.selected_species == '(14)N2O - HITRAN':
+        st.session_state.wn_start = 1285
+        st.session_state.wn_end = 1290
+        
+species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(14)N2O - HITRAN']
 
 with st.sidebar:
-    selected_species = st.selectbox("Species", species_options, 0)
-    temperature = st.number_input("Temperature (K)", min_value=300, max_value=1000, value=300)
-    pressure = st.number_input("Pressure (bar)", min_value=0.01, max_value=10.00, value=1.00)
-    molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01)
+    selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
+    temperature = st.number_input("Temperature (K)", min_value=300, max_value=1000, value=300, step=100)
+    pressure = st.number_input("Pressure (bar)", min_value=0.01, max_value=10.00, value=1.00, step=0.2)
+    molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.01)
     pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=1000, step=1, value=10)
-    N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=1, value=1000)
-    wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00)
-    wnend = st.number_input('Wavelength end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00)
+    N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
+    wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00, key='wn_start')
+    wnend = st.number_input('Wavelength end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, key='wn_end')
     s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-23, max_value=1E-19, value=1E-21, format="%f")
-
+    st.subheader('Warnings')
 
 # Constants
 h = 6.626070E-34  # Planck's constant (J.s)
@@ -64,8 +78,18 @@ x = np.arange(wnstart, wnend, 0.001)  # Similar to MATLAB's 1331:0.001:1334
 
 def import_data():
     # Load data (replace readmatrix and readtable)
-    CH4lines = pd.read_csv('CH4_lines_formatted.csv').values
-    tips = pd.read_csv('q32.csv', delim_whitespace=True).values
+    if selected_species == '(12)CH4 - HITRAN':
+        CH4lines = pd.read_csv('CH4_lines_formatted.csv').values
+        tips = pd.read_csv('q32_12CH4.csv', sep='\s+').values
+    elif selected_species == 'H2(16)O - HITRAN':
+        CH4lines = pd.read_csv('H2O_lines_formatted.csv').values
+        tips = pd.read_csv('q1_H2O16.csv', sep='\s+').values
+    elif selected_species == '(12)CO2 - HITRAN':
+        CH4lines = pd.read_csv('CO2_lines_formatted.csv').values
+        tips = pd.read_csv('q7_12CO2.csv', sep='\s+').values
+    elif selected_species == '(14)N2O - HITRAN':
+        CH4lines = pd.read_csv('N2O_lines_formatted.csv').values
+        tips = pd.read_csv('q21_14N2O.csv', sep='\s+').values
     return CH4lines, tips
 
 # Define interpolation function for tips data (equivalent to tips1 = @(z) in MATLAB)
@@ -103,6 +127,7 @@ def find_range():
     return start_x, end_x
 
 def extract_lines():
+    
     # %% Get parameters and their uncertainties
     lines = []
     j = 0
@@ -123,6 +148,8 @@ def extract_lines():
             for k in [1]:
                 uncertainty = CH4lines[i, 6 + k]
                 if uncertainty == 0 or uncertainty == 1:
+                    with st.sidebar:
+                        st.info('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
                     line.append(1)
                 elif uncertainty == 2:
                     line.append(1E-1)
@@ -140,7 +167,9 @@ def extract_lines():
             for k in [2, 3, 4, 5]:
                 uncertainty = CH4lines[i, 6 + k]
                 if uncertainty in [0, 1, 2]:
-                    line.append(1)
+                    with st.sidebar:
+                        st.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    line.append(0)
                 elif uncertainty == 3:
                     line.append(2.0E-1)
                 elif uncertainty == 4:
@@ -157,7 +186,9 @@ def extract_lines():
             for k in [6]:
                 uncertainty = CH4lines[i, 6 + k]
                 if uncertainty == 0 or uncertainty == 1:
-                    line.append(1)
+                    with st.sidebar:
+                        st.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    line.append(0)
                 elif uncertainty == 2:
                     line.append(1E-1)
                 elif uncertainty == 3:
@@ -318,7 +349,7 @@ def calc_error_bars():
         error_bars[i] = 3*np.std(spectra[i][:])
     
     max_std_index = np.argmax(error_bars)
-    print(max_std_index)
+    #print(max_std_index)
     
     for i in range(2,n_simulations):
         std_residuals[i] = np.std(spectra[max_std_index][range(i)])#/np.std(spectra[i][range(n_simulations)])
@@ -373,7 +404,7 @@ def plot_uncertainty():
 
 
 wn_validation_flag, wn_change_flag = wn_validation()
-print(wn_validation_flag)
+#print(wn_validation_flag)
 if wn_validation_flag == 1:
     
     CH4lines, tips = import_data()   
