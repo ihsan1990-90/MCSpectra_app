@@ -4,17 +4,34 @@ import pandas as pd
 #import csv
 #import time
 import io
+import base64
 import matplotlib.pyplot as plt
 from scipy.stats import norm, skew
 from voigtfwhm import voigtfwhm
 
-st.title("Absorbance spectra with uncertainty")
+st.set_page_config(
+    page_title="Simulations-page",
+    page_icon="🗻",
+    layout="centered",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.kaust.edu.sa',
+        'Report a bug': "mailto:ihsan.farouki@kaust.edu.sa",
+        'About': "# Absorbance spectra simulations with uncertainty quantification"
+    }
+)
+
+
 # Sidebar to take user inputs
-st.sidebar.header("Simulation Controls")
 k_logo = "images/kaust_2.png"
+MS_logo = "images/montespectra_logo.png"
+MS_logo_2 = "images/montespectra_logo_2.png"
+empty_image = "images/Empty.png"
+st.title("Simulation Results")
 #a_logo = "images/aramco_logo.png"
 #k_icon = "images/kaust_2.png"
-st.logo(k_logo,icon_image=k_logo,size='large')
+#st.logo(k_logo,icon_image=k_logo,size='large')
+st.logo(empty_image,icon_image=MS_logo_2,size='large')
 plt.style.use('dark_background')
 
 wn_validation_flag = 1
@@ -47,6 +64,9 @@ def change_wn_range():
 species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(14)N2O - HITRAN']
 
 with st.sidebar:
+    st.image(MS_logo, width=250)
+    st.divider() 
+    st.header("Simulation Controls")
     selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
     temperature = st.number_input("Temperature (K)", min_value=300, max_value=1000, value=300, step=100)
     pressure = st.number_input("Pressure (bar)", min_value=0.01, max_value=10.00, value=1.00, step=0.2)
@@ -56,6 +76,7 @@ with st.sidebar:
     wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00, key='wn_start')
     wnend = st.number_input('Wavelength end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, key='wn_end')
     s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-23, max_value=1E-19, value=1E-21, format="%f")
+    st.divider() 
     st.subheader('Warnings')
 
 # Constants
@@ -390,7 +411,8 @@ def plot_uncertainty():
         ax2.set_ylim(-1,1)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    st.text('Uncertainty spectrum (3 x std.) and skewness spectrum:')
+    st.divider() 
+    st.write('Uncertainty spectrum (3 x std.) and skewness spectrum:')
     st.pyplot(fig)
 
     fig, ax = plt.subplots()
@@ -399,7 +421,9 @@ def plot_uncertainty():
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Standard deviation')
     max_std_index = np.argmax(error_bars)
-    st.text('Standard deviation with iterations at ('+str(round(x[max_std_index],2))+' cm-1):')
+    
+    st.divider() 
+    st.write('Standard deviation with iterations at ('+str(round(x[max_std_index],2))+' cm-1):')
     st.pyplot(fig)
 
 
@@ -416,7 +440,8 @@ if wn_validation_flag == 1:
     delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air = extract_parameters()
     spectra = np.zeros((len(x), n_simulations))
     
-    st.text('Absorbance based on mean line-parameters of '+str(len(lines)) + ' lines,\nand '+str(n_simulations)+' spectra based on randomly sampled line-parameters:')
+    st.divider() 
+    st.write('Absorbance based on mean line-parameters of '+str(len(lines)) + ' lines,\nand '+str(n_simulations)+' spectra based on randomly sampled line-parameters:')
     fig, ax = plt.subplots()
     #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
     ax.set_xlabel('Wavenumbers (cm-1)')
@@ -439,9 +464,20 @@ if wn_validation_flag == 1:
         # Write array to buffer
         np.savetxt(buffer, arr, delimiter=",")
         st.download_button(
-            label="Download result as CSV",
+            label="Download results as CSV",
             data = buffer, # Download buffer
             file_name = 'results.csv',
             mime='text/csv'
         ) 
 
+st.divider() 
+st.subheader('Sponsored by:')
+#st.image(k_logo,width=50)
+st.markdown(
+    """<a href="https://www.kaust.edu.sa/">
+    <img src="data:image/png;base64,{}" width="50">
+    </a>""".format(
+        base64.b64encode(open("images/kaust_2.png", "rb").read()).decode()
+    ),
+    unsafe_allow_html=True,
+)
