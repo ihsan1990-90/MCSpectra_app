@@ -330,7 +330,7 @@ def MC_simulation():
         if np.isnan(np.mean(spectra[:, i])):
             spectra[:, i] = spectra[:, i - 1]
         else:
-            ax.plot(x, spectra[:, i], '.', markersize=0.1, color='red')
+            ax.plot(x, spectra[:, i], '.', markersize=0.1, color="#A87BF9")
     return spectra
 
 def mean_spectrum_simulation():
@@ -403,7 +403,7 @@ def plot_uncertainty():
 
     ax2 = ax1.twinx()  # instantiate a second Axes that shares the same x-axis
 
-    color = (1,1,0,0.8)
+    color = ("#57D2E9")
     ax2.set_ylabel('Skewness', color=color)  # we already handled the x-label with ax1
     ax2.plot(x, skewness, color=color)
     ax2.tick_params(axis='y', labelcolor=color)
@@ -417,7 +417,7 @@ def plot_uncertainty():
 
     fig, ax = plt.subplots()
     #print(std_residuals)
-    ax.plot(range(n_simulations), std_residuals)
+    ax.plot(range(n_simulations), std_residuals,color="#ECBC7A")
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Standard deviation')
     max_std_index = np.argmax(error_bars)
