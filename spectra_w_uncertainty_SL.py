@@ -10,7 +10,7 @@ from scipy.stats import norm, skew
 from voigtfwhm import voigtfwhm
 
 st.set_page_config(
-    page_title="Simulations-page",
+    page_title="MonteSpectra",
     page_icon="🗻",
     layout="centered",
     initial_sidebar_state="expanded",
