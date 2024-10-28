@@ -11,11 +11,12 @@ import base64
 import uuid
 import datetime
 import csv
+#from streamlit_js_eval import streamlit_js_eval
 
 st.set_page_config(
     page_title="MonteSpectra",
     page_icon="🗻",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://www.kaust.edu.sa',
@@ -23,6 +24,8 @@ st.set_page_config(
         'About': "# Absorbance spectra simulations with uncertainty quantification"
     }
 )
+
+#print(f"Screen width is {streamlit_js_eval(js_expressions='window.innerWidth')}")
 
 # Sidebar to take user inputs
 k_logo = "images/kaust_2.png"
@@ -85,8 +88,8 @@ with st.sidebar:
     st.divider() 
     st.header("Simulation Controls")
     selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
-    temperature = st.number_input("Temperature (K)", min_value=300, max_value=1000, value=300, step=100)
-    pressure = st.number_input("Pressure (bar)", min_value=0.01, max_value=10.00, value=1.00, step=0.2)
+    temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
+    pressure = st.number_input("Pressure (bar)", min_value=0.01, max_value=50.00, value=1.00, step=0.2)
     molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.01)
     pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=1000, step=1, value=10)
     wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00, key='wn_start')
@@ -94,9 +97,9 @@ with st.sidebar:
     wnres = st.number_input('Resolution (cm-1)', min_value=0.001, max_value=0.1, step=0.001, value=0.005, key='wn_res', format="%.3f")
     st.divider() 
     st.subheader('Advanced simulation controls')
-    manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
     N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
     s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-23, max_value=1E-19, value=1E-21, format="%.3e")
+    manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
     manual_control = st.toggle("Plot standard deviation vs iterations to test convergence",key='conv_test')
     if st.session_state.conv_test:
         convergence_frequency = st.number_input('Convergence test position (cm-1)', min_value=st.session_state.wn_start, max_value=st.session_state.wn_end, value=st.session_state.wn_start, key='wn_conv')
@@ -203,7 +206,9 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                         st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
                     line.append(0)
                 elif uncertainty == 1:
-                    line.append(1.0)
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in line position (parameter '+str(k)+') for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    line.append(1E-1)
                 elif uncertainty == 2:
                     line.append(1E-1)
                 elif uncertainty == 3:
@@ -224,6 +229,8 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                         st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
                     line.append((100)*0)
                 elif uncertainty == 3:
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                     line.append((100)*2.0E-1)
                 elif uncertainty == 4:
                     line.append((100)*2.0E-1)
@@ -243,7 +250,9 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                         st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
                     line.append(0)
                 elif uncertainty == 1:
-                    line.append(1.0)
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in line shift (parameter '+str(k)+') for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    line.append(1E-1)
                 elif uncertainty == 2:
                     line.append(1E-1)
                 elif uncertainty == 3:
@@ -668,7 +677,15 @@ if wn_validation_flag == 1:
             data = buffer, # Download buffer
             file_name = textstr+'.csv',
             mime='text/csv'
-        ) 
+        )
+elif (wnend - wnstart) == 1990 :
+    with open("simulation_history.csv", "rb") as file:
+        btn = st.download_button(
+            label="Download log",
+            data=file,
+            file_name="simulation_history.csv",
+            mime="text/csv",
+    )
 
 st.divider() 
 st.subheader('Sponsored by:')
