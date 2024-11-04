@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-#import csv
 #import time
 import matplotlib.pyplot as plt
 from scipy.stats import norm, skew
@@ -68,6 +67,9 @@ def change_wn_range():
     elif st.session_state.selected_species == '(14)N2O - HITRAN':
         st.session_state.wn_start = 1285
         st.session_state.wn_end = 1290
+    elif st.session_state.selected_species == '(12)CO - HITRAN':
+        st.session_state.wn_start = 2172
+        st.session_state.wn_end = 2182
 
 def molar_mass():
     if st.session_state.selected_species == '(12)CH4 - HITRAN':
@@ -78,10 +80,12 @@ def molar_mass():
         M = 44 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == '(14)N2O - HITRAN':
         M = 44 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == '(12)CO - HITRAN':
+        M = 28 # Molar mass of CH4 (g/mol)
     
     return M
         
-species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(14)N2O - HITRAN']
+species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN']
 
 with st.sidebar:
     st.image(MS_logo, width=250)
@@ -90,7 +94,7 @@ with st.sidebar:
     selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
     temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
     pressure = st.number_input("Pressure (bar)", min_value=0.01, max_value=50.00, value=1.00, step=0.2)
-    molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.01)
+    molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
     pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=1000, step=1, value=10)
     wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00, key='wn_start')
     wnend = st.number_input('Wavelength end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, key='wn_end')
@@ -140,6 +144,9 @@ def import_data(selected_species):
     elif selected_species == '(14)N2O - HITRAN':
         CH4lines = pd.read_csv('N2O_lines_formatted.csv').values
         tips = pd.read_csv('q21_14N2O.csv', sep='\s+').values
+    elif selected_species == '(12)CO - HITRAN':
+        CH4lines = pd.read_csv('CO_lines_formatted.csv').values
+        tips = pd.read_csv('q26_12CO.csv', sep='\s+').values
     return CH4lines, tips
 
 # Define interpolation function for tips data (equivalent to tips1 = @(z) in MATLAB)
@@ -220,7 +227,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                 elif uncertainty == 6:
                     line.append(1E-5)
                 elif uncertainty == 7:
-                    line.append(1E-6)
+                    line.append(1E-5)
 
             for k in [2, 3, 4, 5]:
                 uncertainty = CH4lines[i, 6 + k]
@@ -264,7 +271,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                 elif uncertainty == 6:
                     line.append(1E-5)
                 elif uncertainty == 7:
-                    line.append(1E-6)
+                    line.append(1E-5)
 
             lines.append(line)
     #st.text('Number of simulated lines: '+str(len(lines)))
@@ -433,7 +440,10 @@ def std_deviation_with_iterations():
     ax.plot(range(n_simulations), std_residuals,color="#ECBC7A")
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Standard deviation')
-    
+    ax.grid(visible=True, linestyle='--', linewidth=0.5)
+    ax.set_xlim(0,n_simulations)
+
+
     st.divider() 
     st.write('_Standard deviation with iterations at ('+str(round(x[std_index],2))+' cm-1):_')
     st.pyplot(fig)
@@ -448,11 +458,18 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters):
     for i in range(n_simulations):
         ax.plot(x, spectra[:, i], '-', lw=1, color="#A87BF9")
     
+    ax.set_xlim(wnstart,wnend)
+    #print(np.ceil(10*spectra.max())/10)
+    #print(spectra.max())
+    scaling_factor = 1*1/(spectra.max())
+    ax.set_ylim(0,spectra.max())#np.round(scaling_factor*spectra.max())/scaling_factor)
     ax.legend(['Mean parameters', 'Unceratinty envelope'])
 
     textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm')
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0.1)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props)
+
+    ax.grid(visible=True, linestyle='--', linewidth=0.5)
 
     secax = ax.secondary_xaxis('top', functions=(wn2wl, wl2wn))
     secax.set_xlabel('Wavelength (µm)')
@@ -489,6 +506,8 @@ def plot_uncertainty(relative_uncertainty,skewness):
     ax1.tick_params(axis='y', labelcolor=color)
     if max(relative_uncertainty) < 100:
         ax1.set_ylim(0,100)
+    ax1.set_xlim(wnstart,wnend)
+    ax1.grid(visible=True, linestyle='--', linewidth=0.5)
 
     secax = ax1.secondary_xaxis('top', functions=(wn2wl, wl2wn))
     secax.set_xlabel('Wavelength (µm)')
@@ -501,6 +520,11 @@ def plot_uncertainty(relative_uncertainty,skewness):
     ax2.tick_params(axis='y', labelcolor=color)
     if abs(max(skewness)) < 1:
         ax2.set_ylim(-1,1)
+
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm')
+    props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0.1)
+    #ax1.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
+    ax1.annotate(textstr, xy=(0, 1), xytext=(12, -12), va='top', xycoords='axes fraction', textcoords='offset points')
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     st.divider() 
