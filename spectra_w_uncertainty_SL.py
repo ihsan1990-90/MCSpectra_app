@@ -28,7 +28,7 @@ st.set_page_config(
 
 # Sidebar to take user inputs
 k_logo = "images/kaust_2.png"
-MS_logo = "images/montespectra_logo.png"
+MS_logo = "images/mcspectra_logo.png"
 MS_logo_2 = "images/montespectra_logo_2.png"
 empty_image = "images/Empty.png"
 st.title("Simulation Results")
