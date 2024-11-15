@@ -5,15 +5,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import norm, skew
 from voigtfwhm import voigtfwhm
+from voigtfwhm_fast import voigtfwhm_fast
 import io
 import base64
 import uuid
 import datetime
 import csv
+#import mpld3
+#import streamlit.components.v1 as components
 #from streamlit_js_eval import streamlit_js_eval
 
 st.set_page_config(
-    page_title="MonteSpectra",
+    page_title="MCSpectra",
     page_icon="🗻",
     layout="centered",
     initial_sidebar_state="expanded",
@@ -89,26 +92,40 @@ species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '
 
 with st.sidebar:
     st.image(MS_logo, width=250)
-    st.divider() 
-    st.header("Simulation Controls")
-    selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
-    temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
-    pressure = st.number_input("Pressure (bar)", min_value=0.01, max_value=50.00, value=1.00, step=0.2)
-    molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
-    pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=1000, step=1, value=10)
-    wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00, key='wn_start')
-    wnend = st.number_input('Wavelength end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, key='wn_end')
-    wnres = st.number_input('Resolution (cm-1)', min_value=0.001, max_value=0.1, step=0.001, value=0.005, key='wn_res', format="%.3f")
-    st.divider() 
-    st.subheader('Advanced simulation controls')
-    N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
-    s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-23, max_value=1E-19, value=1E-21, format="%.3e")
-    manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
-    manual_control = st.toggle("Plot standard deviation vs iterations to test convergence",key='conv_test')
-    if st.session_state.conv_test:
-        convergence_frequency = st.number_input('Convergence test position (cm-1)', min_value=st.session_state.wn_start, max_value=st.session_state.wn_end, value=st.session_state.wn_start, key='wn_conv')
-    st.divider() 
+    #st.divider() 
+    #st.header("Simulation Controls")
+    with st.expander('Basic simulation controls',True):
+        simulation_type = st.selectbox("Spectrum type", ['Absorbance','Emission'], 0,key='simulation_type')
+        selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
+        temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
+        pressure = st.number_input("Pressure (bar)", min_value=0.001, max_value=50.00, value=1.00, step=0.2)
+        molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
+        pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=50000, step=1, value=10)
+        wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00, key='wn_start')
+        wnend = st.number_input('Wavelength end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, key='wn_end')
+        wnres = st.number_input('Resolution (cm-1)', min_value=0.001, max_value=0.1, step=0.001, value=0.005, key='wn_res', format="%.3f")
+    #st.divider() 
+    #st.subheader('Advanced simulation controls')
+    with st.expander('Advanced simulation controls',True):
+        N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
+        s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-23, max_value=1E-19, value=1E-21, format="%.3e")
+        #conv_test = st.toggle("Plot standard deviation vs iterations to test convergence",key='conv_test',value=1, disabled=1)
+        conv_test = 1
+        if conv_test == 1:
+            convergence_frequency = st.number_input('Convergence test position (cm-1)', min_value=st.session_state.wn_start, max_value=st.session_state.wn_end, value=st.session_state.wn_start, key='wn_conv')
+        manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
+        calc_method = st.toggle("Less accurate evaluation of the Voigt function",key='calc_method')
+        exp_unc = st.toggle("Account for uncertainty in experimental conditions",key='exp_unc')
+        if st.session_state.exp_unc:
+            molefraction_unc = st.number_input('Uncertainty in mole fraction (%)', min_value=0, max_value=100, value=0, key='molefraction_unc')
+            pathlength_unc = st.number_input('Uncertainty in pathlength (%)', min_value=0, max_value=100, value=0, key='pathlength_unc')
+            pressure_unc = st.number_input('Uncertainty in pressure (%)', min_value=0, max_value=100, value=0, key='pressure_unc')
+            temperature_unc = st.number_input('Uncertainty in temperature (%)', min_value=0, max_value=100, value=0, key='temperature_unc')
+
+    #st.divider() 
     st.subheader('Warnings')
+
+tab1, tab2, tab3 = st.tabs(["Simulated spectra","Global statistics","Covergence"])
 
 # Constants
 h = 6.626070E-34  # Planck's constant (J.s)
@@ -124,6 +141,10 @@ P = pressure  # Pressure in atm
 L = pathlength  # Path length in cm
 s0_min = s0_min_input # minimum line strength
 M = molar_mass()  # Molar mass of selected species
+exp_unc_values = [0,0,0,0]
+if st.session_state.exp_unc:
+    exp_unc_values = [molefraction_unc,pathlength_unc,pressure_unc,temperature_unc]
+    #print(exp_unc_values)
 
 # Range
 x = np.arange(wnstart, wnend, wnres)  # Similar to MATLAB's 1331:0.001:1334
@@ -152,6 +173,10 @@ def import_data(selected_species):
 # Define interpolation function for tips data (equivalent to tips1 = @(z) in MATLAB)
 def tips1(z):
     return np.interp(z, tips[:, 0], tips[:, 1])
+
+def plank_emission(x,T):
+    Ibb = 2*h*(c**2)*np.divide(np.power(x,3),(np.exp(c*h*x/(kb*T))-1))
+    return Ibb
 
 np.set_printoptions(legacy='1.25')
 
@@ -188,7 +213,7 @@ def find_range(x,CH4lines):
 @st.cache_data
 def extract_lines(start_x,end_x,CH4lines,s0_min):
     print('extracting lines')
-    st.session_state.dek = str(uuid.uuid4())
+    st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
     # %% Get parameters and their uncertainties
     lines = []
     j = 0
@@ -336,58 +361,82 @@ def extract_parameters(lines):
     ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,\
     delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air
 
+def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values):
+    print('generating distributions for experimental uncertainties')
+    molefraction_cdf, molefraction_range = rand_distribution(mole_fraction, mole_fraction * (1/100)*exp_unc_values[0] / 3)
+    pathlength_cdf, pathlength_range = rand_distribution(pathlength, pathlength * (1/100)*exp_unc_values[1] / 3)
+    pressure_cdf, pressure_range = rand_distribution(pressure, pressure * (1/100)*exp_unc_values[2] / 3)
+    temperature_cdf, temperature_range = rand_distribution(temperature, temperature * (1/100)*exp_unc_values[3] / 3)
+
+    return molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range
+
 @st.cache_data
-def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x):
+def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_method,simulation_type):
     # Run the simulations
     for i in range(n_simulations):
         j=0
+        if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
+            mole_fraction_1 = random_value(molefraction_cdf, molefraction_range)
+            L_1 = random_value(pathlength_cdf, pathlength_range)
+            P_1 = random_value(pressure_cdf, pressure_range)
+            T_1 = random_value(temperature_cdf, temperature_range)
+        else:
+            mole_fraction_1 = mole_fraction
+            L_1 = L
+            P_1 = P
+            T_1 = T
         for line in lines:
             # Line position
 
             x0_rand = random_value(x0_rand_cdf[j], x0_rand_range[j])
 
             delta_air_rand = random_value(delta_air_rand_cdf[j], delta_air_rand_range[j])
-            x0_shifted_rand = x0_rand + P * (1 - mole_fraction) * delta_air_rand
+            x0_shifted_rand = x0_rand + P_1 * (1 - mole_fraction_1) * delta_air_rand
 
             # Line strength
 
             S0_rand = random_value(S0_rand_cdf[j], S0_rand_range[j])
-            S_rand = S0_rand * (tips1(296) / tips1(T)) * np.exp(-(h * c * line[4] / kb) * (1 / T - 1 / 296)) \
-                     * (1 - np.exp(-h * c * x0_rand / (kb * T))) / (1 - np.exp(-h * c * x0_rand / (kb * 296)))
+            S_rand = S0_rand * (tips1(296) / tips1(T)) * np.exp(-(h * c * line[4] / kb) * (1 / T_1 - 1 / 296)) \
+                     * (1 - np.exp(-h * c * x0_rand / (kb * T_1))) / (1 - np.exp(-h * c * x0_rand / (kb * 296)))
 
-            A_rand = S_rand * L * mole_fraction * (P / (R * T))  # cm-1
+            A_rand = S_rand * L_1 * mole_fraction_1 * (P_1 / (R * T_1))  # cm-1
 
             # Doppler broadening
-            wG_rand = x0_shifted_rand * (7.1623E-7) * np.sqrt(T / M)
+            wG_rand = x0_shifted_rand * (7.1623E-7) * np.sqrt(T_1 / M)
 
             # Pressure broadening
             n_air_rand = random_value(n_air_rand_cdf[j], n_air_rand_range[j])
-
 
             gamma_self_rand = random_value(gamma_self_rand_cdf[j], gamma_self_rand_range[j])
 
             gamma_air_rand = random_value(gamma_air_rand_cdf[j], gamma_air_rand_range[j])
 
-            gamma_self_rand = gamma_self_rand * (296 / T) ** n_air_rand
-            gamma_air_rand = gamma_air_rand * (296 / T) ** n_air_rand
+            gamma_self_rand = gamma_self_rand * (296 / T_1) ** n_air_rand
+            gamma_air_rand = gamma_air_rand * (296 / T_1) ** n_air_rand
 
-            wL_rand = P * (mole_fraction * 2 * gamma_self_rand + (1 - mole_fraction) * 2 * gamma_air_rand)
-
+            wL_rand = P_1 * (mole_fraction_1 * 2 * gamma_self_rand + (1 - mole_fraction_1) * 2 * gamma_air_rand)
 
             #spectra[:, i] += (x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
-
-            spectra[:, i] += voigtfwhm(x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
+            if not (st.session_state.calc_method):
+                spectra[:, i] += voigtfwhm(x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
+            else:
+                X = np.sqrt(np.log(2))*(x-x0_shifted_rand)/(0.5*wG_rand)
+                Y = np.sqrt(np.log(2))*((0.5*wL_rand)/(0.5*wG_rand))
+                spectra[:, i] += voigtfwhm_fast(x, [A_rand, X, Y])/ ((0.5*wG_rand) / np.sqrt(np.log(2)/np.pi))
 
             j=j+1
 
         if np.isnan(np.mean(spectra[:, i])):
             spectra[:, i] = spectra[:, i - 1]
+        
+        if simulation_type == 'Emission':
+            spectra[:, i] = np.multiply(plank_emission(x,T),(1-np.exp(-spectra[:, i])))
         #else:
             #ax.plot(x, spectra[:, i], '.', markersize=0.1, color="#A87BF9")
     return spectra
 
 @st.cache_data
-def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x):
+def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type):
     spectrum_mean_parameters = np.zeros(len(x))
     j = 0
     for line in lines:
@@ -408,9 +457,18 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x):
         wL = P * (mole_fraction * 2 * gamma_self + (1 - mole_fraction) * 2 * gamma_air)
 
         #spectra[:, i] += (x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
-        spectrum_mean_parameters +=  np.transpose(voigtfwhm(x, [A, x0_shifted, wG, wL]))
-
+        if not (st.session_state.calc_method):
+            spectrum_mean_parameters +=  np.transpose(voigtfwhm(x, [A, x0_shifted, wG, wL]))
+        else:
+            X = np.sqrt(np.log(2))*(x-x0_shifted)/(0.5*wG)
+            Y = np.sqrt(np.log(2))*((0.5*wL)/(0.5*wG))
+            spectrum_mean_parameters += voigtfwhm_fast(x, [A, X, Y])/ ((0.5*wG) / np.sqrt(np.log(2)/np.pi))        
+        
         j=j+1
+
+    if simulation_type == 'Emission':      
+        spectrum_mean_parameters = np.multiply(plank_emission(x,T),(1-np.exp(-spectrum_mean_parameters)))
+        
     return spectrum_mean_parameters
 
 @st.cache_data
@@ -435,7 +493,7 @@ def std_deviation_with_iterations():
     for i in range(2,n_simulations):
         std_residuals[i] = np.std(spectra[std_index][range(i)])#/np.std(spectra[i][range(n_simulations)])
     
-    fig, ax = plt.subplots()
+    fig_3, ax = plt.subplots()
     #print(std_residuals)
     ax.plot(range(n_simulations), std_residuals,color="#ECBC7A")
     ax.set_xlabel('Iteration')
@@ -443,37 +501,52 @@ def std_deviation_with_iterations():
     ax.grid(visible=True, linestyle='--', linewidth=0.5)
     ax.set_xlim(0,n_simulations)
 
-
-    st.divider() 
-    st.write('_Standard deviation with iterations at ('+str(round(x[std_index],2))+' cm-1):_')
-    st.pyplot(fig)
+    #tab3 = st.tabs(['Covergence'])
+    #st.divider() 
+    return fig_3, std_index
     
     #return std_residuals
 
 @st.cache_data
 def plot_MC_spectra(spectra, spectrum_mean_parameters):
-    
-    ax.plot(x, spectrum_mean_parameters, '-', color='white',zorder=n_simulations+1)
+        
+    fig_1, ax = plt.subplots()
+    #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
+    ax.set_xlabel('Wavenumbers (cm-1)')
+    if simulation_type == 'Absorbance':
+        ax.set_ylabel('Absorbance')
+        type_scale = 1
+    else:
+        ax.set_ylabel('Emission (µW/(cm-1-cm2-sr))')
+        type_scale = 1E+6
+
+    ax.plot(x, type_scale*spectrum_mean_parameters, '-', color='white',zorder=n_simulations+1)
+    #ax.plot(x, type_scale*spectrum_mean_parameters, '-', color='black', zorder=n_simulations+1)
+
 
     for i in range(n_simulations):
-        ax.plot(x, spectra[:, i], '-', lw=1, color="#A87BF9")
+        ax.plot(x, type_scale*spectra[:, i], '-', lw=1, color="#A87BF9")
     
     ax.set_xlim(wnstart,wnend)
     #print(np.ceil(10*spectra.max())/10)
     #print(spectra.max())
-    scaling_factor = 1*1/(spectra.max())
-    ax.set_ylim(0,spectra.max())#np.round(scaling_factor*spectra.max())/scaling_factor)
+    #scaling_factor = 1*1/(spectra.max())
+    ax.set_ylim(0,type_scale*spectra.max())#np.round(scaling_factor*spectra.max())/scaling_factor)
     ax.legend(['Mean parameters', 'Unceratinty envelope'])
 
     textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm')
-    props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0.1)
+    props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props)
 
     ax.grid(visible=True, linestyle='--', linewidth=0.5)
 
     secax = ax.secondary_xaxis('top', functions=(wn2wl, wl2wn))
     secax.set_xlabel('Wavelength (µm)')
-    st.pyplot(fig)
+    
+    return fig_1
+
+    #fig_html = mpld3.fig_to_html(fig)
+    #components.html(fig_html, height=600)
 
 def wn2wl(x):
     return 10000 / x
@@ -497,7 +570,7 @@ def plotting_commands():
 
 @st.cache_data
 def plot_uncertainty(relative_uncertainty,skewness):
-    fig, ax1 = plt.subplots()
+    fig_2, ax1 = plt.subplots()
 
     color = (1,1,1,1)
     ax1.set_xlabel('Wavenumbers (cm-1)')
@@ -526,11 +599,11 @@ def plot_uncertainty(relative_uncertainty,skewness):
     #ax1.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
     ax1.annotate(textstr, xy=(0, 1), xytext=(12, -12), va='top', xycoords='axes fraction', textcoords='offset points')
 
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    st.divider() 
-    st.write('_Uncertainty spectrum (3 x std.) and skewness spectrum:_')
+    fig_2.tight_layout()  # otherwise the right y-label is slightly clipped
+    #st.divider() 
     
-    st.pyplot(fig)
+    #tab2 = st.tabs(['Global statistics'])
+    return fig_2
 
 wn_validation_flag, wn_change_flag = wn_validation()
 #print(wn_validation_flag)
@@ -656,32 +729,44 @@ if wn_validation_flag == 1:
     else:
         edited_lines = lines
     
+
     x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
     ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,\
     delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air = extract_parameters(edited_lines)
+    
+    #print(st.session_state.exp_unc)
+    #print(exp_unc_values != [0,0,0,0])
+    if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
+        molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range = exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values)
+
     spectra = np.zeros((len(x), n_simulations))
     
-    st.divider() 
-    st.write('_Absorbance based on mean line-parameters of '+str(len(lines)) + ' lines,\nand '+str(n_simulations)+' spectra based on randomly sampled line-parameters:_')
-    fig, ax = plt.subplots()
-    #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
-    ax.set_xlabel('Wavenumbers (cm-1)')
-    ax.set_ylabel('Absorbance')
-    
-    spectra = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x)
-    spectrum_mean_parameters = mean_spectrum_simulation(edited_lines,T,P,mole_fraction,L,x)
 
-    plot_MC_spectra(spectra, spectrum_mean_parameters)
+    #st.divider()
+        
+    spectra = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type)
+    spectrum_mean_parameters = mean_spectrum_simulation(edited_lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+
+    fig_1 = plot_MC_spectra(spectra, spectrum_mean_parameters)
+    with tab1:
+        st.write('_'+simulation_type+' spectrum based on mean line-parameters of '+str(len(lines)) + ' lines,\nand '+str(n_simulations)+' spectra based on randomly sampled line-parameters:_')
+        st.pyplot(fig_1)
 
     relative_uncertainty, error_bars, skewness = calc_error_bars(spectra,spectrum_mean_parameters)
     #plotting_commands()
 
-    plot_uncertainty(relative_uncertainty,skewness)    
+    fig_2 = plot_uncertainty(relative_uncertainty,skewness)
+    with tab2:
+        st.write('_Uncertainty spectrum (3 x std.) and skewness spectrum:_')
+        st.pyplot(fig_2)    
 
-    if st.session_state.conv_test:
-        std_deviation_with_iterations()
+    if conv_test == 1:
+        fig_3, std_index = std_deviation_with_iterations()
+        with tab3:
+            st.write('_Standard deviation with iterations at ('+str(round(x[std_index],2))+' cm-1):_')
+            st.pyplot(fig_3)  
 
-    simulation_info = [datetime.datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,st.session_state.conv_test]
+    simulation_info = [datetime.datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test]
     #print(simulation_info)
     with open('simulation_history.csv','a') as fd:
         #fd.write(np.array2string(simulation_info))
@@ -691,6 +776,8 @@ if wn_validation_flag == 1:
     arr = np.array(np.transpose([x,spectrum_mean_parameters,error_bars,relative_uncertainty,skewness]))
     arr_df = pd.DataFrame(arr,columns=['wavenumbers (cm-1)','absorbance - mean parameters','3 x standard deviation','relative uncertainty','skewness'])
     # Create an in-memory buffer
+    
+    #st.divider()
     with io.BytesIO() as buffer:
         # Write array to buffer
         #np.savetxt(buffer, arr_df, delimiter=",")
@@ -710,6 +797,7 @@ elif (wnend - wnstart) == 1990 :
             file_name="simulation_history.csv",
             mime="text/csv",
     )
+
 
 st.divider() 
 st.subheader('Sponsored by:')
