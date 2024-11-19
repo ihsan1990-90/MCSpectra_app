@@ -61,34 +61,77 @@ def change_wn_range():
     if st.session_state.selected_species == '(12)CH4 - HITRAN':
         st.session_state.wn_start = 1331
         st.session_state.wn_end = 1334
+        #st.session_state.self_shift_toggle = 0
     elif st.session_state.selected_species == 'H2(16)O - HITRAN':
         st.session_state.wn_start = 3742
         st.session_state.wn_end = 3747
+        #st.session_state.self_shift_toggle = 0
     elif st.session_state.selected_species == '(12)CO2 - HITRAN':
         st.session_state.wn_start = 2300
         st.session_state.wn_end = 2305
+        #st.session_state.self_shift_toggle = 1
     elif st.session_state.selected_species == '(14)N2O - HITRAN':
         st.session_state.wn_start = 1285
         st.session_state.wn_end = 1290
+        #st.session_state.self_shift_toggle = 1
     elif st.session_state.selected_species == '(12)CO - HITRAN':
         st.session_state.wn_start = 2172
         st.session_state.wn_end = 2182
+        #st.session_state.self_shift_toggle = 1
+    elif st.session_state.selected_species == '(14)NH3 - HITRAN':
+        st.session_state.wn_start = 850
+        st.session_state.wn_end = 856
+        #st.session_state.self_shift_toggle = 0
+    elif st.session_state.selected_species == '(12)C2H6 - HITRAN':
+        st.session_state.wn_start = 3009
+        st.session_state.wn_end = 3012
+        #st.session_state.self_shift_toggle = 0
 
 def molar_mass():
     if st.session_state.selected_species == '(12)CH4 - HITRAN':
-        M = 16 # Molar mass of CH4 (g/mol)
+        M = 16 # Molar mass of CH4 (g/mol)        
     elif st.session_state.selected_species == 'H2(16)O - HITRAN':
-        M = 18 # Molar mass of CH4 (g/mol)
+        M = 18 # Molar mass of CH4 (g/mol)       
     elif st.session_state.selected_species == '(12)CO2 - HITRAN':
-        M = 44 # Molar mass of CH4 (g/mol)
+        M = 44 # Molar mass of CH4 (g/mol)        
     elif st.session_state.selected_species == '(14)N2O - HITRAN':
-        M = 44 # Molar mass of CH4 (g/mol)
+        M = 44 # Molar mass of CH4 (g/mol)       
     elif st.session_state.selected_species == '(12)CO - HITRAN':
         M = 28 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == '(14)NH3 - HITRAN':
+        M = 17 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == '(12)C2H6 - HITRAN':
+        M = 30 # Molar mass of CH4 (g/mol)
+        
     
     return M
         
-species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN']
+species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN','(14)NH3 - HITRAN','(12)C2H6 - HITRAN']
+
+if not(hasattr(st.session_state,'selected_species')):
+    broadener_options = ['Air','H2O']
+    self_shift_available = False
+elif st.session_state.selected_species == '(12)CH4 - HITRAN':
+    broadener_options = ['Air','H2O']
+    self_shift_available = False
+elif st.session_state.selected_species == 'H2(16)O - HITRAN':
+    broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == '(12)CO2 - HITRAN':
+    broadener_options = ['Air','H2','He','H2O']
+    self_shift_available = True
+elif st.session_state.selected_species == '(14)N2O - HITRAN':
+    broadener_options = ['Air','He','H2O']
+    self_shift_available = True
+elif st.session_state.selected_species == '(12)CO - HITRAN':
+    broadener_options = ['Air','H2','He','CO2','H2O']
+    self_shift_available = True
+elif st.session_state.selected_species == '(14)NH3 - HITRAN':
+    broadener_options = ['Air','H2','He','CO2','H2O']
+    self_shift_available = False
+elif st.session_state.selected_species == '(12)C2H6 - HITRAN':
+    broadener_options = ['Air']
+    self_shift_available = False
 
 with st.sidebar:
     st.image(MS_logo, width=250)
@@ -97,6 +140,7 @@ with st.sidebar:
     with st.expander('Basic simulation controls',True):
         simulation_type = st.selectbox("Spectrum type", ['Absorbance','Emission'], 0,key='simulation_type')
         selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
+        selected_broadener = st.selectbox("Broadener", broadener_options, 0,key='selected_broadener')
         temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
         pressure = st.number_input("Pressure (bar)", min_value=0.001, max_value=50.00, value=1.00, step=0.2)
         molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
@@ -112,10 +156,11 @@ with st.sidebar:
         #conv_test = st.toggle("Plot standard deviation vs iterations to test convergence",key='conv_test',value=1, disabled=1)
         conv_test = 1
         if conv_test == 1:
-            convergence_frequency = st.number_input('Convergence test position (cm-1)', min_value=st.session_state.wn_start, max_value=st.session_state.wn_end, value=st.session_state.wn_start, key='wn_conv')
+            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', min_value=st.session_state.wn_start, max_value=st.session_state.wn_end, value=st.session_state.wn_start, key='wn_conv')
         manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
         calc_method = st.toggle("Less accurate evaluation of the Voigt function",key='calc_method')
         exp_unc = st.toggle("Account for uncertainty in experimental conditions",key='exp_unc')
+        #self_shift_toggle = st.toggle("Account for pressure self-shift",key='self_shift_toggle') #,disabled=self_shift_available
         if st.session_state.exp_unc:
             molefraction_unc = st.number_input('Uncertainty in mole fraction (%)', min_value=0, max_value=100, value=0, key='molefraction_unc')
             pathlength_unc = st.number_input('Uncertainty in pathlength (%)', min_value=0, max_value=100, value=0, key='pathlength_unc')
@@ -125,7 +170,7 @@ with st.sidebar:
     #st.divider() 
     st.subheader('Warnings')
 
-tab1, tab2, tab3 = st.tabs(["Simulated spectra","Global statistics","Covergence"])
+tab1, tab2, tab3, tab4 = st.tabs(["Simulated spectra","Global statistics","Convergence","PDF"])
 
 # Constants
 h = 6.626070E-34  # Planck's constant (J.s)
@@ -168,6 +213,12 @@ def import_data(selected_species):
     elif selected_species == '(12)CO - HITRAN':
         CH4lines = pd.read_csv('CO_lines_formatted.csv').values
         tips = pd.read_csv('q26_12CO.csv', sep='\s+').values
+    elif selected_species == '(14)NH3 - HITRAN':
+        CH4lines = pd.read_csv('NH3_lines_formatted.csv').values
+        tips = pd.read_csv('q45_14NH3.csv', sep='\s+').values
+    elif selected_species == '(12)C2H6 - HITRAN':
+        CH4lines = pd.read_csv('C2H6_lines_formatted.csv').values
+        tips = pd.read_csv('q78_12C2H6.csv', sep='\s+').values
     return CH4lines, tips
 
 # Define interpolation function for tips data (equivalent to tips1 = @(z) in MATLAB)
@@ -211,7 +262,7 @@ def find_range(x,CH4lines):
     return start_x, end_x
 
 @st.cache_data
-def extract_lines(start_x,end_x,CH4lines,s0_min):
+def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
     print('extracting lines')
     st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
     # %% Get parameters and their uncertainties
@@ -219,20 +270,93 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
     j = 0
     for i in range(start_x,end_x): #range(len(CH4lines)):
         if CH4lines[i,1] > s0_min: #(CH4lines[i, 0] > min(x)) and (CH4lines[i, 0] < max(x)):
+            #print(CH4lines[i])
             j += 1
-            line = [
-                CH4lines[i, 0],  # line position
-                CH4lines[i, 1],  # line strength
-                CH4lines[i, 2],  # gamma air
-                CH4lines[i, 3],  # gamma self
-                CH4lines[i, 4],  # LES
-                CH4lines[i, 5],  # n_air
-                CH4lines[i, 6]   # delta_air
-            ]
+            if selected_broadener == 'Air':
+                line = [
+                    CH4lines[i, 0],  # line position
+                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 2],  # gamma air
+                    CH4lines[i, 3],  # gamma self
+                    CH4lines[i, 4],  # LES
+                    CH4lines[i, 5],  # n_air
+                    CH4lines[i, 6]   # delta_air
+                ]
+            elif selected_broadener == 'H2':
+                line = [
+                    CH4lines[i, 0],  # line position
+                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 11],  # gamma H2
+                    CH4lines[i, 3],  # gamma self
+                    CH4lines[i, 4],  # LES
+                    CH4lines[i, 12],  # n_H2
+                    CH4lines[i, 13]   # delta_H2
+                ]
+                if str(line[5]) == 'nan':
+                    line[5] = 0
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                if str(line[6]) == 'nan':
+                    line[6] = 0
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+            elif selected_broadener == 'He':
+                line = [
+                    CH4lines[i, 0],  # line position
+                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 15],  # gamma He
+                    CH4lines[i, 3],  # gamma self
+                    CH4lines[i, 4],  # LES
+                    CH4lines[i, 16],  # n_He
+                    CH4lines[i, 17]   # delta_He
+                ]
+                if str(line[5]) == 'nan':
+                    line[5] = 0
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                if str(line[6]) == 'nan':
+                    line[6] = 0
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+            elif selected_broadener == 'CO2':
+                line = [
+                    CH4lines[i, 0],  # line position
+                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 18],  # gamma CO2
+                    CH4lines[i, 3],  # gamma self
+                    CH4lines[i, 4],  # LES
+                    CH4lines[i, 19],  # n_CO2
+                    CH4lines[i, 20]   # delta_CO2
+                ]
+                if str(line[5]) == 'nan':
+                    line[5] = 0
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                if str(line[6]) == 'nan':
+                    line[6] = 0
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+            elif selected_broadener == 'H2O':
+                line = [
+                    CH4lines[i, 0],  # line position
+                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 21],  # gamma H2O
+                    CH4lines[i, 3],  # gamma self
+                    CH4lines[i, 4],  # LES
+                    CH4lines[i, 22],  # n_H2O
+                    0   # delta_He
+                ]
+                if str(line[5]) == 'nan':
+                    line[5] = 0
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                
+                with st.sidebar:
+                    st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
 
             # Uncertainty handling (equivalent to switch cases in MATLAB)
             for k in [1]:
-                uncertainty = CH4lines[i, 6 + k]
+                uncertainty = CH4lines[i, 22 + k]
                 if uncertainty == 0:
                     with st.sidebar:
                         st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
@@ -254,8 +378,40 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                 elif uncertainty == 7:
                     line.append(1E-5)
 
-            for k in [2, 3, 4, 5]:
-                uncertainty = CH4lines[i, 6 + k]
+            for k in [2]:
+                uncertainty = CH4lines[i, 22 + k]
+                if uncertainty in [0, 1, 2]:
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    line.append((100)*0)
+                elif uncertainty == 3:
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    line.append((100)*2.0E-1)
+                elif uncertainty == 4:
+                    line.append((100)*2.0E-1)
+                elif uncertainty == 5:
+                    line.append((100)*1.0E-1)
+                elif uncertainty == 6:
+                    line.append((100)*5.0E-2)
+                elif uncertainty == 7:
+                    line.append((100)*2.0E-2)
+                elif uncertainty == 8:
+                    line.append((100)*1.0E-2)
+            
+            if selected_broadener == 'Air':
+                temp_index = 3
+            elif selected_broadener == 'H2':
+                temp_index = 11
+            elif selected_broadener == 'He':
+                temp_index = 15
+            elif selected_broadener == 'CO2':
+                temp_index = 18
+            elif selected_broadener == 'H2O':
+                temp_index = 21
+
+            for k in [temp_index]:
+                uncertainty = CH4lines[i, 22 + k]
                 if uncertainty in [0, 1, 2]:
                     with st.sidebar:
                         st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
@@ -275,8 +431,72 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                 elif uncertainty == 8:
                     line.append((100)*1.0E-2)
 
-            for k in [6]:
-                uncertainty = CH4lines[i, 6 + k]
+            for k in [4]:
+                uncertainty = CH4lines[i, 22 + k]
+                if uncertainty in [0, 1, 2]:
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    line.append((100)*0)
+                elif uncertainty == 3:
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    line.append((100)*2.0E-1)
+                elif uncertainty == 4:
+                    line.append((100)*2.0E-1)
+                elif uncertainty == 5:
+                    line.append((100)*1.0E-1)
+                elif uncertainty == 6:
+                    line.append((100)*5.0E-2)
+                elif uncertainty == 7:
+                    line.append((100)*2.0E-2)
+                elif uncertainty == 8:
+                    line.append((100)*1.0E-2)
+
+            if selected_broadener == 'Air':
+                temp_index = 5
+            elif selected_broadener == 'H2':
+                temp_index = 12
+            elif selected_broadener == 'He':
+                temp_index = 16
+            elif selected_broadener == 'CO2':
+                temp_index = 19
+            elif selected_broadener == 'H2O':
+                temp_index = 22
+
+            for k in [temp_index]:
+                uncertainty = CH4lines[i, 22 + k]
+                if uncertainty in [0, 1, 2]:
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    line.append((100)*0)
+                elif uncertainty == 3:
+                    with st.sidebar:
+                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    line.append((100)*2.0E-1)
+                elif uncertainty == 4:
+                    line.append((100)*2.0E-1)
+                elif uncertainty == 5:
+                    line.append((100)*1.0E-1)
+                elif uncertainty == 6:
+                    line.append((100)*5.0E-2)
+                elif uncertainty == 7:
+                    line.append((100)*2.0E-2)
+                elif uncertainty == 8:
+                    line.append((100)*1.0E-2)
+            
+            if selected_broadener == 'Air':
+                temp_index = 6
+            elif selected_broadener == 'H2':
+                temp_index = 13
+            elif selected_broadener == 'He':
+                temp_index = 17
+            elif selected_broadener == 'CO2':
+                temp_index = 20
+            elif selected_broadener == 'H2O':
+                temp_index = 22
+            
+            for k in [temp_index]:
+                uncertainty = CH4lines[i, 22 + k]
                 if uncertainty == 0:
                     with st.sidebar:
                         st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
@@ -297,7 +517,42 @@ def extract_lines(start_x,end_x,CH4lines,s0_min):
                     line.append(1E-5)
                 elif uncertainty == 7:
                     line.append(1E-5)
+            
 
+            if not(self_shift_available):
+                with st.sidebar:
+                    st.sidebar.warning('Self pressure shift data is not available for this species. Assumed equal to zero, but can be modified using manual control mode.', icon="⚠️")
+                line.append(0)
+                line.append(0)
+            else:
+                with st.sidebar:
+                    st.sidebar.info('Self pressure shift data is available for this species.', icon="ℹ️")
+                line.append(CH4lines[i, 8])
+                for k in [8]:
+                    uncertainty = CH4lines[i, 22 + k]
+                    if uncertainty == 0:
+                        with st.sidebar:
+                            st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
+                        line.append(0)
+                    elif uncertainty == 1:
+                        with st.sidebar:
+                            st.sidebar.warning('Uncertainty in line shift (parameter '+str(k)+') for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                        line.append(1E-1)
+                    elif uncertainty == 2:
+                        line.append(1E-1)
+                    elif uncertainty == 3:
+                        line.append(1E-2)
+                    elif uncertainty == 4:
+                        line.append(1E-3)
+                    elif uncertainty == 5:
+                        line.append(1E-4)
+                    elif uncertainty == 6:
+                        line.append(1E-5)
+                    elif uncertainty == 7:
+                        line.append(1E-5)
+
+            
+            #print(line)
             lines.append(line)
     #st.text('Number of simulated lines: '+str(len(lines)))
     return lines
@@ -328,6 +583,8 @@ def extract_parameters(lines):
     n_air_rand_range = np.zeros((len(lines),100))
     delta_air_rand_cdf = np.zeros((len(lines),100))
     delta_air_rand_range = np.zeros((len(lines),100))
+    delta_self_rand_cdf = np.zeros((len(lines),100))
+    delta_self_rand_range = np.zeros((len(lines),100))
 
     x0 = np.zeros(len(lines))
     s0 = np.zeros(len(lines))
@@ -335,18 +592,21 @@ def extract_parameters(lines):
     gamma_self_0 = np.zeros(len(lines))
     n_air = np.zeros(len(lines))
     delta_air = np.zeros(len(lines))
+    delta_self = np.zeros(len(lines))
 
 
     #fig, ax = plt.subplots()
 
     j=0
     for line in lines:
+        #print(line)
         x0_rand_cdf[j], x0_rand_range[j] = rand_distribution(line[0], line[7] / 3)
         S0_rand_cdf[j], S0_rand_range[j] = rand_distribution(line[1], line[1] * (1/100)*line[8] / 3)
         gamma_air_rand_cdf[j], gamma_air_rand_range[j] = rand_distribution(line[2], line[2] * (1/100)*line[9] / 3)
         gamma_self_rand_cdf[j], gamma_self_rand_range[j] = rand_distribution(line[3], line[3] * (1/100)*line[10] / 3)
         n_air_rand_cdf[j], n_air_rand_range[j] = rand_distribution(line[5], line[5] * (1/100)*line[11] / 3)
         delta_air_rand_cdf[j], delta_air_rand_range[j] = rand_distribution(line[6], line[12] / 3)
+        delta_self_rand_cdf[j], delta_self_rand_range[j] = rand_distribution(line[13], line[14] / 3)
 
         x0[j] = line[0]
         s0[j] = line[1]
@@ -354,12 +614,13 @@ def extract_parameters(lines):
         gamma_self_0[j] = line[3]
         n_air[j] = line[5]
         delta_air[j] = line[6]
+        delta_self[j] = line[13]
 
         j = j + 1
 
     return  x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
-    ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,\
-    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air
+    ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range, delta_self_rand_cdf, delta_self_rand_range,\
+    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self
 
 def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values):
     print('generating distributions for experimental uncertainties')
@@ -391,7 +652,8 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
             x0_rand = random_value(x0_rand_cdf[j], x0_rand_range[j])
 
             delta_air_rand = random_value(delta_air_rand_cdf[j], delta_air_rand_range[j])
-            x0_shifted_rand = x0_rand + P_1 * (1 - mole_fraction_1) * delta_air_rand
+            delta_self_rand = random_value(delta_self_rand_cdf[j], delta_self_rand_range[j])
+            x0_shifted_rand = x0_rand + P_1 * ((1 - mole_fraction_1) * delta_air_rand + mole_fraction_1*delta_self_rand)
 
             # Line strength
 
@@ -442,7 +704,7 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_
     for line in lines:
         # Line position
 
-        x0_shifted = x0[j] + P * (1 - mole_fraction) * delta_air[j]
+        x0_shifted = x0[j] + P * ((1 - mole_fraction) * delta_air[j] + mole_fraction * delta_self[j])
         # Line strength
 
         S = s0[j] * (tips1(296) / tips1(T)) * np.exp(-(h * c * line[4] / kb) * (1 / T - 1 / 296)) \
@@ -507,6 +769,36 @@ def std_deviation_with_iterations():
     
     #return std_residuals
 
+def uncertainty_PDF():
+    #std_residuals = np.zeros(N_simulations)
+    #max_std_index = np.argmax(error_bars)
+    std_index = np.where(np.round(x,3) == st.session_state.wn_conv)[0][0]
+    #print(std_index)
+    #print('at ('+str(round(x[std_index],2))+' cm-1')
+    #print(max_std_index)
+    #for i in range(2,n_simulations):
+    #    std_residuals[i] = np.std(spectra[std_index])#/np.std(spectra[i][range(n_simulations)])
+    N_points = len(spectra[std_index])
+    n_bins = 50
+    fig_4, ax = plt.subplots()
+    #print(std_residuals)
+    ax.hist(spectra[std_index], bins=n_bins, color="#A87BF9")
+    ax.axvline(spectrum_mean_parameters[std_index], color='white', linestyle='dashed', linewidth=2)
+    #textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations) +'\n' + 'Skewness: ' + str(np.round(skewness[std_index],3)))
+    props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
+    ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props) 
+    ax.set_xlabel('Absorbance')
+    ax.set_ylabel('Frequency')
+    ax.grid(visible=True, linestyle='--', linewidth=0.5)
+    #ax.set_xlim(0,n_simulations)
+
+    #tab3 = st.tabs(['Covergence'])
+    #st.divider() 
+    return fig_4, std_index
+    
+    #return std_residuals
+
 @st.cache_data
 def plot_MC_spectra(spectra, spectrum_mean_parameters):
         
@@ -534,7 +826,7 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters):
     ax.set_ylim(0,type_scale*spectra.max())#np.round(scaling_factor*spectra.max())/scaling_factor)
     ax.legend(['Mean parameters', 'Unceratinty envelope'])
 
-    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm')
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props)
 
@@ -594,7 +886,7 @@ def plot_uncertainty(relative_uncertainty,skewness):
     if abs(max(skewness)) < 1:
         ax2.set_ylim(-1,1)
 
-    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm')
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0.1)
     #ax1.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
     ax1.annotate(textstr, xy=(0, 1), xytext=(12, -12), va='top', xycoords='axes fraction', textcoords='offset points')
@@ -611,7 +903,7 @@ if wn_validation_flag == 1:
     
     CH4lines, tips = import_data(selected_species)   
     start_x, end_x = find_range(x,CH4lines)
-    lines = extract_lines(start_x,end_x,CH4lines,s0_min)
+    lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener)
     number_of_lines = len(lines)
     
     if st.session_state.manual_control:
@@ -638,7 +930,7 @@ if wn_validation_flag == 1:
         ),
         3: st.column_config.NumberColumn(
             "γ_bath",
-            help="Bath gas broadning coeffecient (cm-1/atm) at 296 K. Value imported from HITRAN is for air.",
+            help="Bath gas broadning coeffecient (cm-1/atm) at 296 K.",
             min_value=0,
             #max_value=10,
             step=0.0001,
@@ -662,7 +954,7 @@ if wn_validation_flag == 1:
         ),
         6: st.column_config.NumberColumn(
             "n",
-            help="Temperature exponent for broadning coeffecients. Value imported from HITRAN is for air.",
+            help="Temperature exponent for broadning coeffecients.",
             #min_value=0,
             #max_value=end_x,
             step=0.0001,
@@ -670,7 +962,7 @@ if wn_validation_flag == 1:
         ),
         7: st.column_config.NumberColumn(
             "δ",
-            help="Line position pressure shift (cm-1.atm-1). Value imported from HITRAN is for air.",
+            help="Line position pressure shift (cm-1.atm-1).",
             #min_value=start_x,
             #max_value=end_x,
             step=0.0001,
@@ -723,16 +1015,33 @@ if wn_validation_flag == 1:
             max_value=1,
             step=1E-6,
             format="%.1e",
+        ),
+        14: st.column_config.NumberColumn(
+            "δ_s",
+            help="Line position pressure self shift (cm-1.atm-1).",
+            #min_value=start_x,
+            #max_value=end_x,
+            step=0.0001,
+            format="%.4f",
+        ),
+        15: st.column_config.NumberColumn(
+            "± δ_s",
+            help="Unceratinty in self pressure shift parameter (cm-1.atm-1)",
+            min_value=1E-6,
+            max_value=1,
+            step=1E-6,
+            format="%.1e",
         )
     }
         edited_lines = st.data_editor(lines,column_config=lines_column_config,key=st.session_state.dek)
+        st.divider()
     else:
         edited_lines = lines
     
 
     x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
-    ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,\
-    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air = extract_parameters(edited_lines)
+    ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,delta_self_rand_cdf, delta_self_rand_range,\
+    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self = extract_parameters(edited_lines)
     
     #print(st.session_state.exp_unc)
     #print(exp_unc_values != [0,0,0,0])
@@ -764,7 +1073,12 @@ if wn_validation_flag == 1:
         fig_3, std_index = std_deviation_with_iterations()
         with tab3:
             st.write('_Standard deviation with iterations at ('+str(round(x[std_index],2))+' cm-1):_')
-            st.pyplot(fig_3)  
+            st.pyplot(fig_3)
+
+    fig_4, std_index = uncertainty_PDF()
+    with tab4:
+        st.write('_Histogram of predicted absorbance at ('+str(round(x[std_index],2))+' cm-1). Dashed line indicates predicted absorbance based on mean parameters:_')
+        st.pyplot(fig_4)   
 
     simulation_info = [datetime.datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test]
     #print(simulation_info)
@@ -783,6 +1097,7 @@ if wn_validation_flag == 1:
         #np.savetxt(buffer, arr_df, delimiter=",")
         textstr = ('MonteSpectra: '+selected_species + '_' + str(100*mole_fraction)+'% _' + str(T) + ' K_' + str(P) + ' atm_'+ str(L) + ' cm')
         buffer = pd.DataFrame.to_csv(arr_df, sep=',', index=False, encoding='utf-8')
+        
         st.download_button(
             label="Download results as CSV",
             data = buffer, # Download buffer
