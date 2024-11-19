@@ -785,7 +785,7 @@ def uncertainty_PDF():
     ax.hist(spectra[std_index], bins=n_bins, color="#A87BF9")
     ax.axvline(spectrum_mean_parameters[std_index], color='white', linestyle='dashed', linewidth=2)
     #textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
-    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations) +'\n' + 'Skewness: ' + str(np.round(skewness[std_index],3)))
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations) +'\n' + 'Skewness: ' + str(np.round(skewness[std_index],4))+'\n' + 'Std. Dev.: ' + str(np.round(0.333*error_bars[std_index],4)))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props) 
     ax.set_xlabel('Absorbance')
