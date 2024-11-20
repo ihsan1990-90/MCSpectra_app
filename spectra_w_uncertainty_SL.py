@@ -156,7 +156,7 @@ with st.sidebar:
         #conv_test = st.toggle("Plot standard deviation vs iterations to test convergence",key='conv_test',value=1, disabled=1)
         conv_test = 1
         if conv_test == 1:
-            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', min_value=st.session_state.wn_start, max_value=st.session_state.wn_end, value=st.session_state.wn_start, key='wn_conv')
+            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', min_value=min(st.session_state.wn_start,st.session_state.wn_end), max_value=max(st.session_state.wn_start,st.session_state.wn_end), value=min(st.session_state.wn_start,st.session_state.wn_end), key='wn_conv')
         manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
         calc_method = st.toggle("Less accurate evaluation of the Voigt function",key='calc_method')
         exp_unc = st.toggle("Account for uncertainty in experimental conditions",key='exp_unc')
