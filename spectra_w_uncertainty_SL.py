@@ -901,7 +901,7 @@ def std_deviation_with_iterations(spectra,spectrum_mean_parameters):
     for i in range(2,n_simulations):
         std_residuals[i] = 100*3*np.std(spectra[std_index][range(i)])/spectrum_mean_parameters[std_index]#/np.std(spectra[i][range(n_simulations)])
     
-    np.savetxt('sample_results/convergence_for_analysis.csv', std_residuals, delimiter=',')
+    #np.savetxt('sample_results/convergence_for_analysis.csv', std_residuals, delimiter=',')
 
     fig_3, ax = plt.subplots()
     #print(std_residuals)
@@ -1075,21 +1075,21 @@ if wn_validation_flag == 1:
             while residual > max_residual:
                 s0_min = 0.1*s0_min
                 lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener, testing_range)
-                print(len(lines))
+                #print(len(lines))
                 #edited_lines = lines
                 x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
                 extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
                 residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
-                print('threshold residual')
-                print(residual)
+                #('threshold residual')
+                #print(residual)
                 spectrum_mean_parameters = extended_spectrum_mean_parameters
 
     s0_min = 10*s0_min
     with st.sidebar:
         st.sidebar.info(f'Line strength threshold set at {s0_min:.1e} (cm-1/(molec.cm-2))', icon="ℹ️")
     #st.session_state.s0_min = s0_min
-    print('line strength threshold')
-    print(s0_min)
+    #print('line strength threshold')
+    #print(s0_min)
     number_of_lines_limited = len(lines)
     if number_of_lines_limited == 0:
         max_residual = 1
@@ -1116,8 +1116,8 @@ if wn_validation_flag == 1:
                     start_x = extended_start_x
                     end_x = extended_end_x
                     spectrum_mean_parameters = extended_spectrum_mean_parameters
-                    print(wn_cutoff)
-                    print(residual)
+                    #print(wn_cutoff)
+                    #print(residual)
 
         testing_range = False
         wn_cutoff = wn_cutoff - 10
@@ -1276,7 +1276,7 @@ if wn_validation_flag == 1:
         else:
             edited_lines = lines
 
-        print(edited_lines == lines)
+        #print(edited_lines == lines)
         with tab1:
             with st.spinner('Extracting line parameters ...'):
                 number_of_lines = len(edited_lines)
@@ -1294,7 +1294,7 @@ if wn_validation_flag == 1:
         spectra_limited = np.zeros((len(x_limited), n_simulations))    
         spectra_limited = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type)
 
-        np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
+        #np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
 
         with tab1:
             with st.spinner('Computing spectrum based on mean parameters ...'):
