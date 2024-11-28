@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-#import time
 import matplotlib.pyplot as plt
 from scipy.stats import norm, skew
 from voigtfwhm import voigtfwhm
@@ -11,6 +10,7 @@ import base64
 import uuid
 import datetime
 import csv
+import time
 #import mpld3
 #import streamlit.components.v1 as components
 #from streamlit_js_eval import streamlit_js_eval
@@ -57,6 +57,7 @@ def wn_validation():
 if 'dek' not in st.session_state:
     st.session_state.dek = str(uuid.uuid4())
 
+# change wavelength range depending on selected species
 def change_wn_range():
     if st.session_state.selected_species == '(12)CH4 - HITRAN':
         st.session_state.wn_start = 1331
@@ -67,6 +68,10 @@ def change_wn_range():
         st.session_state.wn_end = 3747
         #st.session_state.self_shift_toggle = 0
     elif st.session_state.selected_species == '(12)CO2 - HITRAN':
+        st.session_state.wn_start = 2300
+        st.session_state.wn_end = 2305
+        #st.session_state.self_shift_toggle = 1
+    elif st.session_state.selected_species == '(13)CO2 - HITRAN':
         st.session_state.wn_start = 2300
         st.session_state.wn_end = 2305
         #st.session_state.self_shift_toggle = 1
@@ -87,13 +92,16 @@ def change_wn_range():
         st.session_state.wn_end = 3012
         #st.session_state.self_shift_toggle = 0
 
+# molar mass of selected species
 def molar_mass():
     if st.session_state.selected_species == '(12)CH4 - HITRAN':
         M = 16 # Molar mass of CH4 (g/mol)        
     elif st.session_state.selected_species == 'H2(16)O - HITRAN':
         M = 18 # Molar mass of CH4 (g/mol)       
     elif st.session_state.selected_species == '(12)CO2 - HITRAN':
-        M = 44 # Molar mass of CH4 (g/mol)        
+        M = 44 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == '(13)CO2 - HITRAN':
+        M = 45 # Molar mass of CH4 (g/mol)        
     elif st.session_state.selected_species == '(14)N2O - HITRAN':
         M = 44 # Molar mass of CH4 (g/mol)       
     elif st.session_state.selected_species == '(12)CO - HITRAN':
@@ -106,8 +114,9 @@ def molar_mass():
     
     return M
         
-species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN','(14)NH3 - HITRAN','(12)C2H6 - HITRAN']
+species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(13)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN','(14)NH3 - HITRAN','(12)C2H6 - HITRAN']
 
+# preprogrammed list of broadeners for different species
 if not(hasattr(st.session_state,'selected_species')):
     broadener_options = ['Air','H2O']
     self_shift_available = False
@@ -118,6 +127,9 @@ elif st.session_state.selected_species == 'H2(16)O - HITRAN':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == '(12)CO2 - HITRAN':
+    broadener_options = ['Air','H2','He','H2O']
+    self_shift_available = True
+elif st.session_state.selected_species == '(13)CO2 - HITRAN':
     broadener_options = ['Air','H2','He','H2O']
     self_shift_available = True
 elif st.session_state.selected_species == '(14)N2O - HITRAN':
@@ -152,7 +164,9 @@ with st.sidebar:
     #st.subheader('Advanced simulation controls')
     with st.expander('Advanced simulation controls',True):
         N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
-        s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-23, max_value=1E-19, value=1E-21, format="%.3e")
+        N_PDF_points = st.number_input('PDF resolution (Number of points)', min_value=50, max_value=100, step=1, value=100)
+        s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-25, max_value=1E-19, value=1E-21, format="%.3e", disabled=True,key='s0_min')
+        max_residual = st.number_input("Max. allowed risidual due to frequency cut-off", min_value=1E-3, max_value=1E-2, value=1E-2, format="%.3e")
         #conv_test = st.toggle("Plot standard deviation vs iterations to test convergence",key='conv_test',value=1, disabled=1)
         conv_test = 1
         if conv_test == 1:
@@ -190,34 +204,37 @@ exp_unc_values = [0,0,0,0]
 if st.session_state.exp_unc:
     exp_unc_values = [molefraction_unc,pathlength_unc,pressure_unc,temperature_unc]
     #print(exp_unc_values)
+np.set_printoptions(precision=16)
 
-# Range
-x = np.arange(wnstart, wnend, wnres)  # Similar to MATLAB's 1331:0.001:1334
 
-@st.cache_data
+# import lines and tips data for the selected lines
+@st.cache_data(show_spinner=False,max_entries=3)
 def import_data(selected_species):
     print('importing data')
     # Load data (replace readmatrix and readtable)
     if selected_species == '(12)CH4 - HITRAN':
-        CH4lines = pd.read_csv('CH4_lines_formatted.csv').values
+        CH4lines = pd.read_csv('12CH4_lines_formatted.csv').values
         tips = pd.read_csv('q32_12CH4.csv', sep='\s+').values
     elif selected_species == 'H2(16)O - HITRAN':
-        CH4lines = pd.read_csv('H2O_lines_formatted.csv').values
+        CH4lines = pd.read_csv('H216O_lines_formatted.csv').values
         tips = pd.read_csv('q1_H2O16.csv', sep='\s+').values
     elif selected_species == '(12)CO2 - HITRAN':
-        CH4lines = pd.read_csv('CO2_lines_formatted.csv').values
+        CH4lines = pd.read_csv('12CO2_lines_formatted.csv').values
         tips = pd.read_csv('q7_12CO2.csv', sep='\s+').values
+    elif selected_species == '(13)CO2 - HITRAN':
+        CH4lines = pd.read_csv('13CO2_lines_formatted.csv').values
+        tips = pd.read_csv('q8_13CO2.csv', sep='\s+').values
     elif selected_species == '(14)N2O - HITRAN':
-        CH4lines = pd.read_csv('N2O_lines_formatted.csv').values
+        CH4lines = pd.read_csv('14N2O_lines_formatted.csv').values
         tips = pd.read_csv('q21_14N2O.csv', sep='\s+').values
     elif selected_species == '(12)CO - HITRAN':
-        CH4lines = pd.read_csv('CO_lines_formatted.csv').values
+        CH4lines = pd.read_csv('12CO_lines_formatted.csv').values
         tips = pd.read_csv('q26_12CO.csv', sep='\s+').values
     elif selected_species == '(14)NH3 - HITRAN':
-        CH4lines = pd.read_csv('NH3_lines_formatted.csv').values
+        CH4lines = pd.read_csv('14NH3_lines_formatted.csv').values
         tips = pd.read_csv('q45_14NH3.csv', sep='\s+').values
     elif selected_species == '(12)C2H6 - HITRAN':
-        CH4lines = pd.read_csv('C2H6_lines_formatted.csv').values
+        CH4lines = pd.read_csv('12C2H6_lines_formatted.csv').values
         tips = pd.read_csv('q78_12C2H6.csv', sep='\s+').values
     return CH4lines, tips
 
@@ -231,7 +248,8 @@ def plank_emission(x,T):
 
 np.set_printoptions(legacy='1.25')
 
-@st.cache_data
+# start and end indices for the lines going into the calculation
+@st.cache_data(show_spinner=False,max_entries=3)
 def find_range(x,CH4lines):
     print('finding start and end indices')
     #t = time.time()
@@ -261,10 +279,11 @@ def find_range(x,CH4lines):
     #print(time.time() - t)
     return start_x, end_x
 
-@st.cache_data
-def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
+# Get parameters and their uncertainties for lines within the range
+@st.cache_data(show_spinner=False,max_entries=3)
+def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_range):
     print('extracting lines')
-    st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
+    flags_array = np.zeros(23)
     # %% Get parameters and their uncertainties
     lines = []
     j = 0
@@ -272,6 +291,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
         if CH4lines[i,1] > s0_min: #(CH4lines[i, 0] > min(x)) and (CH4lines[i, 0] < max(x)):
             #print(CH4lines[i])
             j += 1
+            #print(flags_array[11] == 0)
             if selected_broadener == 'Air':
                 line = [
                     CH4lines[i, 0],  # line position
@@ -294,12 +314,16 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
                 ]
                 if str(line[5]) == 'nan':
                     line[5] = 0
-                    with st.sidebar:
-                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[1] == 0):
+                        with st.sidebar:
+                            flags_array[1] = 1
+                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 if str(line[6]) == 'nan':
                     line[6] = 0
-                    with st.sidebar:
-                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[2] == 0):
+                        with st.sidebar:
+                            flags_array[2] =1
+                            st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
             elif selected_broadener == 'He':
                 line = [
                     CH4lines[i, 0],  # line position
@@ -312,12 +336,16 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
                 ]
                 if str(line[5]) == 'nan':
                     line[5] = 0
-                    with st.sidebar:
-                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[3] == 0):
+                        with st.sidebar:
+                            flags_array[3] =1
+                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 if str(line[6]) == 'nan':
                     line[6] = 0
-                    with st.sidebar:
-                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[4] == 0):
+                        with st.sidebar:
+                            flags_array[4] =1
+                            st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
             elif selected_broadener == 'CO2':
                 line = [
                     CH4lines[i, 0],  # line position
@@ -330,12 +358,16 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
                 ]
                 if str(line[5]) == 'nan':
                     line[5] = 0
-                    with st.sidebar:
-                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[5] == 0):
+                        with st.sidebar:
+                            flags_array[5] =1
+                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 if str(line[6]) == 'nan':
                     line[6] = 0
-                    with st.sidebar:
-                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[6] == 0):
+                        with st.sidebar:
+                            flags_array[6] =1
+                            st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
             elif selected_broadener == 'H2O':
                 line = [
                     CH4lines[i, 0],  # line position
@@ -348,22 +380,29 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
                 ]
                 if str(line[5]) == 'nan':
                     line[5] = 0
-                    with st.sidebar:
-                        st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[7] == 0):
+                        with st.sidebar:
+                            flags_array[7] =1
+                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 
-                with st.sidebar:
-                    st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                if (not(testing_range)):
+                    with st.sidebar:
+                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
 
             # Uncertainty handling (equivalent to switch cases in MATLAB)
             for k in [1]:
                 uncertainty = CH4lines[i, 22 + k]
                 if uncertainty == 0:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
+                    if (not(testing_range)) & (flags_array[8] == 0):
+                        with st.sidebar:
+                            flags_array[8] =1
+                            st.sidebar.warning('Uncertainty in line position is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
                     line.append(0)
                 elif uncertainty == 1:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in line position (parameter '+str(k)+') for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[9] == 0):
+                        with st.sidebar:
+                            flags_array[9] =1
+                            st.sidebar.warning('Uncertainty in line position (parameter '+str(k)+') for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                     line.append(1E-1)
                 elif uncertainty == 2:
                     line.append(1E-1)
@@ -381,12 +420,22 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
             for k in [2]:
                 uncertainty = CH4lines[i, 22 + k]
                 if uncertainty in [0, 1, 2]:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    if (not(testing_range))  & (flags_array[10] == 0):
+                        with st.sidebar:
+                            flags_array[10] =1
+                            st.sidebar.warning('Uncertainty in line strength is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
                     line.append((100)*0)
                 elif uncertainty == 3:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    if (not(testing_range)) & ((flags_array[11] == 0)):
+                        with st.sidebar:
+                            #print('not testing range')
+                            #print(not(testing_range))
+                            #print('flag down')
+                            #print(flags_array[11] == 0)
+                            #print('overall')
+                            #print(not(testing_range) & (flags_array[11] == 0))
+                            flags_array[11] =1
+                            st.sidebar.warning('Uncertainty in line strength for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                     line.append((100)*2.0E-1)
                 elif uncertainty == 4:
                     line.append((100)*2.0E-1)
@@ -413,12 +462,16 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
             for k in [temp_index]:
                 uncertainty = CH4lines[i, 22 + k]
                 if uncertainty in [0, 1, 2]:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    if (not(testing_range)) & (flags_array[12] == 0):
+                        with st.sidebar:
+                            flags_array[12] =1
+                            st.sidebar.warning('Uncertainty in bath gas broadening coeffecient is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
                     line.append((100)*0)
                 elif uncertainty == 3:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[13] == 0):
+                        with st.sidebar:
+                            flags_array[13] =1
+                            st.sidebar.warning('Uncertainty in bath gas broadening coeffecient for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                     line.append((100)*2.0E-1)
                 elif uncertainty == 4:
                     line.append((100)*2.0E-1)
@@ -434,12 +487,16 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
             for k in [4]:
                 uncertainty = CH4lines[i, 22 + k]
                 if uncertainty in [0, 1, 2]:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    if (not(testing_range)) & (flags_array[14] == 0):
+                        with st.sidebar:
+                            flags_array[14] =1
+                            st.sidebar.warning('Uncertainty in self broadening coeffecient is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
                     line.append((100)*0)
                 elif uncertainty == 3:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[15] == 0):
+                        with st.sidebar:
+                            flags_array[15] =1
+                            st.sidebar.warning('Uncertainty in self broadening coeffecient is unavailable for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                     line.append((100)*2.0E-1)
                 elif uncertainty == 4:
                     line.append((100)*2.0E-1)
@@ -466,12 +523,16 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
             for k in [temp_index]:
                 uncertainty = CH4lines[i, 22 + k]
                 if uncertainty in [0, 1, 2]:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
+                    if (not(testing_range)) & (flags_array[16] == 0):
+                        with st.sidebar:
+                            flags_array[16] =1
+                            st.sidebar.warning('Uncertainty in bath gas broadening coeffecient temperature exponent is unavailable for '+str(np.round(CH4lines[i, 0],2)), icon="⚠️")
                     line.append((100)*0)
                 elif uncertainty == 3:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[17] == 0):
+                        with st.sidebar:
+                            flags_array[17] =1
+                            st.sidebar.warning('Uncertainty in bath gas broadening coeffecient temperature exponent for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                     line.append((100)*2.0E-1)
                 elif uncertainty == 4:
                     line.append((100)*2.0E-1)
@@ -498,12 +559,16 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
             for k in [temp_index]:
                 uncertainty = CH4lines[i, 22 + k]
                 if uncertainty == 0:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
+                    if (not(testing_range)) & (flags_array[18] == 0):
+                        with st.sidebar:
+                            flags_array[18] = 1
+                            st.sidebar.warning('Uncertainty in bath gas pressure shift is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
                     line.append(0)
                 elif uncertainty == 1:
-                    with st.sidebar:
-                        st.sidebar.warning('Uncertainty in line shift (parameter '+str(k)+') for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                    if (not(testing_range)) & (flags_array[19] == 0):
+                        with st.sidebar:
+                            flags_array[19] = 1
+                            st.sidebar.warning('Uncertainty in bath gas pressure shift for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                     line.append(1E-1)
                 elif uncertainty == 2:
                     line.append(1E-1)
@@ -520,23 +585,31 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
             
 
             if not(self_shift_available):
-                with st.sidebar:
-                    st.sidebar.warning('Self pressure shift data is not available for this species. Assumed equal to zero, but can be modified using manual control mode.', icon="⚠️")
+                if (not(testing_range)) & (flags_array[20] == 0):
+                    with st.sidebar:
+                        flags_array[20] =1
+                        st.sidebar.warning('Self pressure shift data is not available for this species. Assumed equal to zero, but can be modified using manual control mode.', icon="⚠️")
                 line.append(0)
                 line.append(0)
             else:
-                with st.sidebar:
-                    st.sidebar.info('Self pressure shift data is available for this species.', icon="ℹ️")
+                if (not(testing_range)) & (flags_array[21] == 0):
+                    with st.sidebar:
+                        flags_array[21] =1
+                        st.sidebar.info('Self pressure shift data is available for this species.', icon="ℹ️")
                 line.append(CH4lines[i, 8])
                 for k in [8]:
                     uncertainty = CH4lines[i, 22 + k]
                     if uncertainty == 0:
-                        with st.sidebar:
-                            st.sidebar.warning('Uncertainty in parameter '+str(k)+' is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
+                        if (not(testing_range)) & (flags_array[22] == 0):
+                            with st.sidebar:
+                                flags_array[22] = 1
+                                st.sidebar.warning('Uncertainty in self pressure shift is unavailable for '+str(CH4lines[i, 0]), icon="⚠️")
                         line.append(0)
                     elif uncertainty == 1:
-                        with st.sidebar:
-                            st.sidebar.warning('Uncertainty in line shift (parameter '+str(k)+') for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
+                        if (not(testing_range)) & (flags_array[23] == 0):
+                            flags_array[23] = 1
+                            with st.sidebar:
+                                st.sidebar.warning('Uncertainty in self pressure shift for '+str(np.round(CH4lines[i, 0],2)) + ' might be larger than visible in the simulation result', icon="⚠️")
                         line.append(1E-1)
                     elif uncertainty == 2:
                         line.append(1E-1)
@@ -555,12 +628,13 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener):
             #print(line)
             lines.append(line)
     #st.text('Number of simulated lines: '+str(len(lines)))
+    #my_spinner.empty()
     return lines
 
 # %% Simulate spectra with uncertainty
 def rand_distribution(mu, sigma):
     """Equivalent to rand_distrition in MATLAB."""
-    range_vals = np.linspace(mu - 3 * sigma, mu + 3 * sigma, 100)
+    range_vals = np.linspace(mu - 3 * sigma, mu + 3 * sigma, num_of_PDF_points)
     cdf_vals = norm.cdf(range_vals, loc=mu, scale=sigma)
     return cdf_vals, range_vals
 
@@ -568,23 +642,24 @@ def random_value(cdf, range_vals):
     """Equivalent to random_value in MATLAB."""
     return np.interp(np.random.rand(), cdf, range_vals)
 
-@st.cache_data
+# Generate distributions for line parameters
+@st.cache_data(show_spinner=False,max_entries=3)
 def extract_parameters(lines):
     print('extracting parameters and generating distributions')
-    x0_rand_cdf = np.zeros((len(lines),100))
-    x0_rand_range = np.zeros((len(lines),100))
-    S0_rand_cdf = np.zeros((len(lines),100))
-    S0_rand_range = np.zeros((len(lines),100))
-    gamma_air_rand_cdf = np.zeros((len(lines),100))
-    gamma_air_rand_range = np.zeros((len(lines),100))
-    gamma_self_rand_cdf = np.zeros((len(lines),100))
-    gamma_self_rand_range = np.zeros((len(lines),100))
-    n_air_rand_cdf = np.zeros((len(lines),100))
-    n_air_rand_range = np.zeros((len(lines),100))
-    delta_air_rand_cdf = np.zeros((len(lines),100))
-    delta_air_rand_range = np.zeros((len(lines),100))
-    delta_self_rand_cdf = np.zeros((len(lines),100))
-    delta_self_rand_range = np.zeros((len(lines),100))
+    x0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    x0_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    S0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    S0_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    gamma_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    gamma_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    gamma_self_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    gamma_self_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    n_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    n_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    delta_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    delta_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    delta_self_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    delta_self_rand_range = np.zeros((len(lines),num_of_PDF_points))
 
     x0 = np.zeros(len(lines))
     s0 = np.zeros(len(lines))
@@ -600,6 +675,7 @@ def extract_parameters(lines):
     j=0
     for line in lines:
         #print(line)
+
         x0_rand_cdf[j], x0_rand_range[j] = rand_distribution(line[0], line[7] / 3)
         S0_rand_cdf[j], S0_rand_range[j] = rand_distribution(line[1], line[1] * (1/100)*line[8] / 3)
         gamma_air_rand_cdf[j], gamma_air_rand_range[j] = rand_distribution(line[2], line[2] * (1/100)*line[9] / 3)
@@ -622,6 +698,52 @@ def extract_parameters(lines):
     ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range, delta_self_rand_cdf, delta_self_rand_range,\
     delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self
 
+@st.cache_data(show_spinner=False,max_entries=3)
+def extract_mean_parameters(lines):
+    print('extracting mean parameters')
+
+    x0 = np.zeros(len(lines))
+    s0 = np.zeros(len(lines))
+    gamma_air_0 = np.zeros(len(lines))
+    gamma_self_0 = np.zeros(len(lines))
+    n_air = np.zeros(len(lines))
+    delta_air = np.zeros(len(lines))
+    delta_self = np.zeros(len(lines))
+
+    #fig, ax = plt.subplots()
+
+    j=0
+    temp_flag_start = False
+    temp_flag_end = False
+    visible_start = 0
+    visible_end = 0
+    for line in lines:
+        #print(line)
+        if (line[0] >= wnstart):
+            if temp_flag_start == False:
+                visible_start = j
+                temp_flag_start = True
+        if (line[0] >= wnend):
+            if temp_flag_end == False:
+                visible_end = j
+                temp_flag_end = True
+        
+        x0[j] = line[0]
+        s0[j] = line[1]
+        gamma_air_0[j] = line[2]
+        gamma_self_0[j] = line[3]
+        n_air[j] = line[5]
+        delta_air[j] = line[6]
+        delta_self[j] = line[13]
+
+        j = j + 1
+    
+    if temp_flag_end == False:
+        visible_end = j
+
+    return  x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end
+
+# Generate distributions for experimental conditions
 def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values):
     print('generating distributions for experimental uncertainties')
     molefraction_cdf, molefraction_range = rand_distribution(mole_fraction, mole_fraction * (1/100)*exp_unc_values[0] / 3)
@@ -631,9 +753,21 @@ def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_u
 
     return molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range
 
-@st.cache_data
+# Run the simulations
+@st.cache_data(show_spinner=False)
 def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_method,simulation_type):
     # Run the simulations
+    with tab1:
+        my_bar = st.progress(0, text='Monte Carlo simulation progress:')
+    spectra = np.zeros((len(x), n_simulations))
+    spectra_1 = np.zeros((len(x_limited), n_simulations))
+
+    if not(st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
+        mole_fraction_1 = mole_fraction
+        L_1 = L
+        P_1 = P
+        T_1 = T
+
     for i in range(n_simulations):
         j=0
         if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
@@ -641,14 +775,10 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
             L_1 = random_value(pathlength_cdf, pathlength_range)
             P_1 = random_value(pressure_cdf, pressure_range)
             T_1 = random_value(temperature_cdf, temperature_range)
-        else:
-            mole_fraction_1 = mole_fraction
-            L_1 = L
-            P_1 = P
-            T_1 = T
+            
         for line in lines:
             # Line position
-
+            #t = time.time()
             x0_rand = random_value(x0_rand_cdf[j], x0_rand_range[j])
 
             delta_air_rand = random_value(delta_air_rand_cdf[j], delta_air_rand_range[j])
@@ -678,6 +808,12 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
 
             wL_rand = P_1 * (mole_fraction_1 * 2 * gamma_self_rand + (1 - mole_fraction_1) * 2 * gamma_air_rand)
 
+            #elapsed = time.time() - t
+            #print('time to sample parameters for a single line')
+            #print(elapsed)
+
+            #t = time.time()
+
             #spectra[:, i] += (x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
             if not (st.session_state.calc_method):
                 spectra[:, i] += voigtfwhm(x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
@@ -685,6 +821,10 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
                 X = np.sqrt(np.log(2))*(x-x0_shifted_rand)/(0.5*wG_rand)
                 Y = np.sqrt(np.log(2))*((0.5*wL_rand)/(0.5*wG_rand))
                 spectra[:, i] += voigtfwhm_fast(x, [A_rand, X, Y])/ ((0.5*wG_rand) / np.sqrt(np.log(2)/np.pi))
+
+            #elapsed = time.time() - t
+            #print('time to calculate and add spectrum for a single line based on sampled parameters')
+            #print(elapsed)
 
             j=j+1
 
@@ -695,9 +835,15 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
             spectra[:, i] = np.multiply(plank_emission(x,T),(1-np.exp(-spectra[:, i])))
         #else:
             #ax.plot(x, spectra[:, i], '.', markersize=0.1, color="#A87BF9")
-    return spectra
 
-@st.cache_data
+        spectra_1[:, i] = np.interp(x_limited, x, spectra[:, i])
+        my_bar.progress(i/n_simulations, text='Monte Carlo simulation progress')
+        
+    my_bar.empty()
+    return spectra_1
+
+# Calculate mean spectrum
+@st.cache_data(show_spinner=False,max_entries=3)
 def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type):
     spectrum_mean_parameters = np.zeros(len(x))
     j = 0
@@ -733,33 +879,35 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_
         
     return spectrum_mean_parameters
 
-@st.cache_data
+@st.cache_data(show_spinner=False,max_entries=3)
 def calc_error_bars(spectra,spectrum_mean_parameters):
-    error_bars = np.zeros(len(x))
-    relative_uncertainty = np.zeros(len(x))
-    skewness = np.zeros(len(x))
-    for i in range(len(x)):
+    error_bars = np.zeros(len(x_limited))
+    relative_uncertainty = np.zeros(len(x_limited))
+    skewness = np.zeros(len(x_limited))
+    for i in range(len(x_limited)):
         relative_uncertainty[i] = 100*3*np.std(spectra[i][:])/np.mean(spectrum_mean_parameters[i])
         skewness[i] = skew(spectra[i][:])
         error_bars[i] = 3*np.std(spectra[i][:])
     
     return relative_uncertainty, error_bars, skewness
   
-def std_deviation_with_iterations():
+def std_deviation_with_iterations(spectra,spectrum_mean_parameters):
     std_residuals = np.zeros(N_simulations)
     #max_std_index = np.argmax(error_bars)
-    std_index = np.where(np.round(x,3) == st.session_state.wn_conv)[0][0]
+    std_index = np.where(np.round(x_limited,3) == st.session_state.wn_conv)[0][0]
     #print(std_index)
     #print('at ('+str(round(x[std_index],2))+' cm-1')
     #print(max_std_index)
     for i in range(2,n_simulations):
-        std_residuals[i] = np.std(spectra[std_index][range(i)])#/np.std(spectra[i][range(n_simulations)])
+        std_residuals[i] = 100*3*np.std(spectra[std_index][range(i)])/spectrum_mean_parameters[std_index]#/np.std(spectra[i][range(n_simulations)])
     
+    np.savetxt('sample_results/convergence_for_analysis.csv', std_residuals, delimiter=',')
+
     fig_3, ax = plt.subplots()
     #print(std_residuals)
     ax.plot(range(n_simulations), std_residuals,color="#ECBC7A")
     ax.set_xlabel('Iteration')
-    ax.set_ylabel('Standard deviation')
+    ax.set_ylabel('3 x std. dev. (%)')
     ax.grid(visible=True, linestyle='--', linewidth=0.5)
     ax.set_xlim(0,n_simulations)
 
@@ -769,10 +917,10 @@ def std_deviation_with_iterations():
     
     #return std_residuals
 
-def uncertainty_PDF():
+def uncertainty_PDF(spectra):
     #std_residuals = np.zeros(N_simulations)
     #max_std_index = np.argmax(error_bars)
-    std_index = np.where(np.round(x,3) == st.session_state.wn_conv)[0][0]
+    std_index = np.where(np.round(x_limited,3) == st.session_state.wn_conv)[0][0]
     #print(std_index)
     #print('at ('+str(round(x[std_index],2))+' cm-1')
     #print(max_std_index)
@@ -799,9 +947,8 @@ def uncertainty_PDF():
     
     #return std_residuals
 
-@st.cache_data
+@st.cache_data(show_spinner=False,max_entries=3)
 def plot_MC_spectra(spectra, spectrum_mean_parameters):
-        
     fig_1, ax = plt.subplots()
     #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
     ax.set_xlabel('Wavenumbers (cm-1)')
@@ -812,12 +959,12 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters):
         ax.set_ylabel('Emission (µW/(cm-1-cm2-sr))')
         type_scale = 1E+6
 
-    ax.plot(x, type_scale*spectrum_mean_parameters, '-', color='white',zorder=n_simulations+1)
+    ax.plot(x_limited, type_scale*spectrum_mean_parameters, '-', color='white',zorder=n_simulations+1)
     #ax.plot(x, type_scale*spectrum_mean_parameters, '-', color='black', zorder=n_simulations+1)
 
 
     for i in range(n_simulations):
-        ax.plot(x, type_scale*spectra[:, i], '-', lw=1, color="#A87BF9")
+        ax.plot(x_limited, type_scale*spectra[:, i], '-', lw=1, color="#A87BF9")
     
     ax.set_xlim(wnstart,wnend)
     #print(np.ceil(10*spectra.max())/10)
@@ -860,14 +1007,14 @@ def plotting_commands():
     #ax.plot(x, error_bars, '-', linewidth=2, color='black')
     st.pyplot(fig)
 
-@st.cache_data
+@st.cache_data(show_spinner=False,max_entries=3)
 def plot_uncertainty(relative_uncertainty,skewness):
     fig_2, ax1 = plt.subplots()
 
     color = (1,1,1,1)
     ax1.set_xlabel('Wavenumbers (cm-1)')
-    ax1.set_ylabel('Relative uncertainty (%)', color=color)
-    ax1.plot(x, relative_uncertainty, color=color)
+    ax1.set_ylabel('3 x std. dev. (%)', color=color)
+    ax1.plot(x_limited, relative_uncertainty, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
     if max(relative_uncertainty) < 100:
         ax1.set_ylim(0,100)
@@ -881,7 +1028,7 @@ def plot_uncertainty(relative_uncertainty,skewness):
 
     color = ("#57D2E9")
     ax2.set_ylabel('Skewness', color=color)  # we already handled the x-label with ax1
-    ax2.plot(x, skewness, color=color)
+    ax2.plot(x_limited, skewness, color=color)
     ax2.tick_params(axis='y', labelcolor=color)
     if abs(max(skewness)) < 1:
         ax2.set_ylim(-1,1)
@@ -897,21 +1044,106 @@ def plot_uncertainty(relative_uncertainty,skewness):
     #tab2 = st.tabs(['Global statistics'])
     return fig_2
 
+@st.cache_data(show_spinner=False)
+def update_manual_control(lines):
+    st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
+
+
 wn_validation_flag, wn_change_flag = wn_validation()
 #print(wn_validation_flag)
 if wn_validation_flag == 1:
+    t = time.time()    
+    CH4lines, tips = import_data(selected_species)
+    num_of_PDF_points = N_PDF_points
     
-    CH4lines, tips = import_data(selected_species)   
+    testing_range = True
+    wn_cutoff = 0
+    x_limited = np.arange(wnstart, wnend, wnres)
+    x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
     start_x, end_x = find_range(x,CH4lines)
-    lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener)
-    number_of_lines = len(lines)
+    start_x_limited, end_x_limited = start_x, end_x
+    lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener, testing_range)
+    number_of_lines_limited = len(lines)
+    #edited_lines = lines
+    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
+    # loop to satisfy the risidual requirement
+    spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
     
-    if st.session_state.manual_control:
+    residual = 1
+    with tab1:
+        with st.spinner('Computing lines strength threshold ...'):
+            while residual > max_residual:
+                s0_min = 0.1*s0_min
+                lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener, testing_range)
+                print(len(lines))
+                #edited_lines = lines
+                x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
+                extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+                residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
+                print('threshold residual')
+                print(residual)
+                spectrum_mean_parameters = extended_spectrum_mean_parameters
+
+    s0_min = 10*s0_min
+    with st.sidebar:
+        st.sidebar.info(f'Line strength threshold set at {s0_min:.1e} (cm-1/(molec.cm-2))', icon="ℹ️")
+    #st.session_state.s0_min = s0_min
+    print('line strength threshold')
+    print(s0_min)
+    number_of_lines_limited = len(lines)
+    if number_of_lines_limited == 0:
+        max_residual = 1
+        st.warning('No lines within the selected frequency range.', icon="⚠️")
+    else:
+        with tab1:
+            with st.spinner('Computing cut-off frequency ...'):
+                residual = 1
+                while residual > max_residual:
+
+                    wn_cutoff = wn_cutoff + 10
+                    x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
+                    extended_start_x, extended_end_x = find_range(x,CH4lines)
+                    lines = extract_lines(extended_start_x,extended_end_x,CH4lines,s0_min, selected_broadener, testing_range)
+                    #edited_lines = lines
+                    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
+                    extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+
+                    extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
+
+                    # reevaluate extended_spectrum_mean_parameters at original x_range points and store to extended_spectrum_mean_parameters
+                    #residual = max(np.divide(extended_spectrum_mean_parameters - spectrum_mean_parameters,extended_spectrum_mean_parameters))
+                    residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
+                    start_x = extended_start_x
+                    end_x = extended_end_x
+                    spectrum_mean_parameters = extended_spectrum_mean_parameters
+                    print(wn_cutoff)
+                    print(residual)
+
+        testing_range = False
+        wn_cutoff = wn_cutoff - 10
+
+        with st.sidebar:
+            st.success('Lines within '+str(wnstart - wn_cutoff)+' - '+str(wnend + wn_cutoff)+' cm-1 will be included in the simulation for enhanced accuracy within the selected wavenumber range.', icon="✅")
+
+        x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
+        extended_start_x, extended_end_x = find_range(x,CH4lines)
+        lines = extract_lines(extended_start_x,extended_end_x,CH4lines,s0_min, selected_broadener, testing_range)
+        x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
+
+        # Range
+        #x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)  # Similar to MATLAB's 1331:0.001:1334
+
+        #start_x, end_x = find_range(x,CH4lines)
+        #lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener)
+
         #print(lines)
-        #print('data editor key: '+str(st.session_state.dek))
-        st.divider() 
-        st.write('_Editable list of parameters for lines within the selected range:_')
-        lines_column_config = {
+        if st.session_state.manual_control:
+            update_manual_control(lines)
+            #print(lines)
+            #print('data editor key: '+str(st.session_state.dek))
+            st.divider() 
+            st.write('_Editable list of parameters for lines within the selected range:_')
+            lines_column_config = {
         1: st.column_config.NumberColumn(
             "v0",
             help="Line position (cm-1)",
@@ -1033,77 +1265,101 @@ if wn_validation_flag == 1:
             format="%.1e",
         )
     }
-        edited_lines = st.data_editor(lines,column_config=lines_column_config,key=st.session_state.dek)
-        st.divider()
-    else:
-        edited_lines = lines
-    
+            #print(lines[:])
+            #print(lines[(start_x_limited-start_x):(end_x-start_x_limited)])
+            #print(visible_start)
+            #print(visible_end)
+            edited_lines_limited = st.data_editor(lines[visible_start:visible_end],column_config=lines_column_config,key=st.session_state.dek)
+            st.divider()
+            #print(type(edited_lines_limited))
+            edited_lines = lines[0:(visible_start)] + edited_lines_limited + lines[(visible_end):len(lines)]
+        else:
+            edited_lines = lines
 
-    x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
-    ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,delta_self_rand_cdf, delta_self_rand_range,\
-    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self = extract_parameters(edited_lines)
-    
-    #print(st.session_state.exp_unc)
-    #print(exp_unc_values != [0,0,0,0])
-    if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
-        molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range = exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values)
+        print(edited_lines == lines)
+        with tab1:
+            with st.spinner('Extracting line parameters ...'):
+                number_of_lines = len(edited_lines)
+                x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
+                ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,delta_self_rand_cdf, delta_self_rand_range,\
+                delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self = extract_parameters(edited_lines)
 
-    spectra = np.zeros((len(x), n_simulations))
-    
+        #print(st.session_state.exp_unc)
+        #print(exp_unc_values != [0,0,0,0])
+        if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
+            molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range = exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values)
 
-    #st.divider()
-        
-    spectra = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type)
-    spectrum_mean_parameters = mean_spectrum_simulation(edited_lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+        #st.divider()
 
-    fig_1 = plot_MC_spectra(spectra, spectrum_mean_parameters)
-    with tab1:
-        st.write('_'+simulation_type+' spectrum based on mean line-parameters of '+str(len(lines)) + ' lines,\nand '+str(n_simulations)+' spectra based on randomly sampled line-parameters:_')
-        st.pyplot(fig_1)
+        spectra_limited = np.zeros((len(x_limited), n_simulations))    
+        spectra_limited = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type)
 
-    relative_uncertainty, error_bars, skewness = calc_error_bars(spectra,spectrum_mean_parameters)
-    #plotting_commands()
+        np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
 
-    fig_2 = plot_uncertainty(relative_uncertainty,skewness)
-    with tab2:
-        st.write('_Uncertainty spectrum (3 x std.) and skewness spectrum:_')
-        st.pyplot(fig_2)    
+        with tab1:
+            with st.spinner('Computing spectrum based on mean parameters ...'):
+                extended_spectrum_mean_parameters = mean_spectrum_simulation(edited_lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+                extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
+                spectrum_mean_parameters = extended_spectrum_mean_parameters
 
-    if conv_test == 1:
-        fig_3, std_index = std_deviation_with_iterations()
-        with tab3:
-            st.write('_Standard deviation with iterations at ('+str(round(x[std_index],2))+' cm-1):_')
-            st.pyplot(fig_3)
+        with tab1:
+            with st.spinner('Plotting simulated spectra ...'):
+                fig_1 = plot_MC_spectra(spectra_limited, spectrum_mean_parameters)
+        with tab1:
+            st.write('_'+simulation_type+' spectrum based on mean line-parameters of '+str(number_of_lines) + ' lines,\nand '+str(n_simulations)+' spectra based on randomly sampled line-parameters:_')
+            st.pyplot(fig_1)
 
-    fig_4, std_index = uncertainty_PDF()
-    with tab4:
-        st.write('_Histogram of predicted absorbance at ('+str(round(x[std_index],2))+' cm-1). Dashed line indicates predicted absorbance based on mean parameters:_')
-        st.pyplot(fig_4)   
+        with tab1:
+            with st.spinner('Calculating and plotting global statistics ...'):
+                relative_uncertainty, error_bars, skewness = calc_error_bars(spectra_limited,spectrum_mean_parameters)
+                #plotting_commands()
+                fig_2 = plot_uncertainty(relative_uncertainty,skewness)
+        with tab2:
+            st.write('_Uncertainty spectrum (3 x std.) and skewness spectrum:_')
+            st.pyplot(fig_2)    
 
-    simulation_info = [datetime.datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test]
-    #print(simulation_info)
-    with open('simulation_history.csv','a') as fd:
-        #fd.write(np.array2string(simulation_info))
-        writer = csv.writer(fd)
-        writer.writerow(simulation_info)
+        if conv_test == 1:
+            fig_3, std_index = std_deviation_with_iterations(spectra_limited,spectrum_mean_parameters)
+            with tab3:
+                st.write('_Standard deviation with iterations at ('+str(round(x_limited[std_index],2))+' cm-1):_')
+                st.pyplot(fig_3)
 
-    arr = np.array(np.transpose([x,spectrum_mean_parameters,error_bars,relative_uncertainty,skewness]))
-    arr_df = pd.DataFrame(arr,columns=['wavenumbers (cm-1)','absorbance - mean parameters','3 x standard deviation','relative uncertainty','skewness'])
-    # Create an in-memory buffer
-    
-    #st.divider()
-    with io.BytesIO() as buffer:
-        # Write array to buffer
-        #np.savetxt(buffer, arr_df, delimiter=",")
-        textstr = ('MonteSpectra: '+selected_species + '_' + str(100*mole_fraction)+'% _' + str(T) + ' K_' + str(P) + ' atm_'+ str(L) + ' cm')
-        buffer = pd.DataFrame.to_csv(arr_df, sep=',', index=False, encoding='utf-8')
-        
-        st.download_button(
-            label="Download results as CSV",
-            data = buffer, # Download buffer
-            file_name = textstr+'.csv',
-            mime='text/csv'
-        )
+        with tab1:
+            with st.spinner('Calculating and plotting PDF at ('+str(round(x_limited[std_index],2))+' cm-1)...'):
+                fig_4, std_index = uncertainty_PDF(spectra_limited)
+        with tab4:
+            st.write('_Histogram of predicted absorbance at ('+str(round(x_limited[std_index],2))+' cm-1). Dashed line indicates predicted absorbance based on mean parameters:_')
+            st.pyplot(fig_4)   
+
+        print('Elapsed time')
+        print(time.time() - t)
+
+        simulation_info = [datetime.datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test]
+        #print(simulation_info)
+        with open('simulation_history.csv','a') as fd:
+            #fd.write(np.array2string(simulation_info))
+            writer = csv.writer(fd)
+            writer.writerow(simulation_info)
+
+        arr = np.array(np.transpose([x_limited,spectrum_mean_parameters,error_bars,relative_uncertainty,skewness]))
+        arr_df = pd.DataFrame(arr,columns=['wavenumbers (cm-1)','absorbance - mean parameters','3 x standard deviation','relative uncertainty','skewness'])
+        # Create an in-memory buffer
+
+        #st.divider()
+        with tab1:
+            with st.spinner('Preparing downloadable data ...'):
+                with io.BytesIO() as buffer:
+                    # Write array to buffer
+                    #np.savetxt(buffer, arr_df, delimiter=",")
+                    textstr = ('MCSpectra_'+selected_species + '_' + str(100*mole_fraction)+'_' + '_'+ str(simulation_type) + '_'+ str(T) + '_K_' + str(P) + '_atm_'+ str(L) + '_cm_' + str(wnstart) + '_'+ str(wnend)+ '_broadener_' + str(selected_broadener))
+                    buffer = pd.DataFrame.to_csv(arr_df, sep=',', index=False, encoding='utf-8')
+
+                    st.download_button(
+                        label="Download results as CSV",
+                        data = buffer, # Download buffer
+                        file_name = textstr+'.csv',
+                        mime='text/csv'
+                    )
 elif (wnend - wnstart) == 1990 :
     with open("simulation_history.csv", "rb") as file:
         btn = st.download_button(
