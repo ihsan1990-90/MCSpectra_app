@@ -208,7 +208,7 @@ np.set_printoptions(precision=16)
 
 
 # import lines and tips data for the selected lines
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def import_data(selected_species):
     print('importing data')
     # Load data (replace readmatrix and readtable)
@@ -249,7 +249,7 @@ def plank_emission(x,T):
 np.set_printoptions(legacy='1.25')
 
 # start and end indices for the lines going into the calculation
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def find_range(x,CH4lines):
     print('finding start and end indices')
     #t = time.time()
@@ -280,7 +280,7 @@ def find_range(x,CH4lines):
     return start_x, end_x
 
 # Get parameters and their uncertainties for lines within the range
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_range):
     print('extracting lines')
     flags_array = np.zeros(23)
@@ -643,7 +643,7 @@ def random_value(cdf, range_vals):
     return np.interp(np.random.rand(), cdf, range_vals)
 
 # Generate distributions for line parameters
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def extract_parameters(lines):
     print('extracting parameters and generating distributions')
     x0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
@@ -698,7 +698,7 @@ def extract_parameters(lines):
     ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range, delta_self_rand_cdf, delta_self_rand_range,\
     delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self
 
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def extract_mean_parameters(lines):
     print('extracting mean parameters')
 
@@ -754,7 +754,7 @@ def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_u
     return molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range
 
 # Run the simulations
-@st.cache_data(show_spinner=False)
+@st.cache_resource(show_spinner=False)
 def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_method,simulation_type):
     # Run the simulations
     with tab1:
@@ -843,7 +843,7 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
     return spectra_1
 
 # Calculate mean spectrum
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type):
     spectrum_mean_parameters = np.zeros(len(x))
     j = 0
@@ -879,7 +879,7 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_
         
     return spectrum_mean_parameters
 
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def calc_error_bars(spectra,spectrum_mean_parameters):
     error_bars = np.zeros(len(x_limited))
     relative_uncertainty = np.zeros(len(x_limited))
@@ -936,7 +936,10 @@ def uncertainty_PDF(spectra):
     textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations) +'\n' + 'Skewness: ' + str(np.round(skewness[std_index],4))+'\n' + 'Std. Dev.: ' + str(np.round(0.333*error_bars[std_index],4)))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props) 
-    ax.set_xlabel('Absorbance')
+    if simulation_type == 'Absorbance':
+        ax.set_xlabel('Absorbance')
+    else:
+        ax.set_xlabel('Emission (µW/(cm-1-cm2-sr)')
     ax.set_ylabel('Frequency')
     ax.grid(visible=True, linestyle='--', linewidth=0.5)
     #ax.set_xlim(0,n_simulations)
@@ -947,7 +950,7 @@ def uncertainty_PDF(spectra):
     
     #return std_residuals
 
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def plot_MC_spectra(spectra, spectrum_mean_parameters):
     fig_1, ax = plt.subplots()
     #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
@@ -1007,7 +1010,7 @@ def plotting_commands():
     #ax.plot(x, error_bars, '-', linewidth=2, color='black')
     st.pyplot(fig)
 
-@st.cache_data(show_spinner=False,max_entries=3)
+@st.cache_resource(show_spinner=False,max_entries=3)
 def plot_uncertainty(relative_uncertainty,skewness):
     fig_2, ax1 = plt.subplots()
 
@@ -1044,7 +1047,7 @@ def plot_uncertainty(relative_uncertainty,skewness):
     #tab2 = st.tabs(['Global statistics'])
     return fig_2
 
-@st.cache_data(show_spinner=False)
+@st.cache_resource(show_spinner=False)
 def update_manual_control(lines):
     st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
 
