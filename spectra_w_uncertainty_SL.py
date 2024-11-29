@@ -917,6 +917,7 @@ def std_deviation_with_iterations(spectra,spectrum_mean_parameters):
     
     #return std_residuals
 
+@st.cache_resource(show_spinner=False,max_entries=3)
 def uncertainty_PDF(spectra):
     #std_residuals = np.zeros(N_simulations)
     #max_std_index = np.argmax(error_bars)
@@ -930,18 +931,20 @@ def uncertainty_PDF(spectra):
     n_bins = 50
     fig_4, ax = plt.subplots()
     #print(std_residuals)
-    ax.hist(spectra[std_index], bins=n_bins, color="#A87BF9")
-    ax.axvline(spectrum_mean_parameters[std_index], color='white', linestyle='dashed', linewidth=2)
+    if simulation_type == 'Absorbance':
+        ax.set_xlabel('Absorbance')
+        type_scale = 1
+    else:
+        ax.set_xlabel('Emission (µW/(cm-1-cm2-sr)')
+        type_scale = 1E+6
+    ax.set_ylabel('Frequency')
+    ax.grid(visible=True, linestyle='--', linewidth=0.5)
+    ax.hist(type_scale*spectra[std_index], bins=n_bins, color="#A87BF9")
+    ax.axvline(type_scale*spectrum_mean_parameters[std_index], color='white', linestyle='dashed', linewidth=2)
     #textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
     textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations) +'\n' + 'Skewness: ' + str(np.round(skewness[std_index],4))+'\n' + 'Std. Dev.: ' + str(np.round(0.333*error_bars[std_index],4)))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props) 
-    if simulation_type == 'Absorbance':
-        ax.set_xlabel('Absorbance')
-    else:
-        ax.set_xlabel('Emission (µW/(cm-1-cm2-sr)')
-    ax.set_ylabel('Frequency')
-    ax.grid(visible=True, linestyle='--', linewidth=0.5)
     #ax.set_xlim(0,n_simulations)
 
     #tab3 = st.tabs(['Covergence'])
