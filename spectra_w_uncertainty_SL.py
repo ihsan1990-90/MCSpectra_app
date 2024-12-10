@@ -213,29 +213,29 @@ def import_data(selected_species):
     print('importing data')
     # Load data (replace readmatrix and readtable)
     if selected_species == '(12)CH4 - HITRAN':
-        CH4lines = pd.read_csv('12CH4_lines_formatted.csv').values
-        tips = pd.read_csv('q32_12CH4.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\12CH4_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q32_12CH4.csv', sep='\s+').values
     elif selected_species == 'H2(16)O - HITRAN':
-        CH4lines = pd.read_csv('H216O_lines_formatted.csv').values
-        tips = pd.read_csv('q1_H2O16.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\H216O_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q1_H2O16.csv', sep='\s+').values
     elif selected_species == '(12)CO2 - HITRAN':
-        CH4lines = pd.read_csv('12CO2_lines_formatted.csv').values
-        tips = pd.read_csv('q7_12CO2.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\12CO2_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q7_12CO2.csv', sep='\s+').values
     elif selected_species == '(13)CO2 - HITRAN':
-        CH4lines = pd.read_csv('13CO2_lines_formatted.csv').values
-        tips = pd.read_csv('q8_13CO2.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\13CO2_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q8_13CO2.csv', sep='\s+').values
     elif selected_species == '(14)N2O - HITRAN':
-        CH4lines = pd.read_csv('14N2O_lines_formatted.csv').values
-        tips = pd.read_csv('q21_14N2O.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\14N2O_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q21_14N2O.csv', sep='\s+').values
     elif selected_species == '(12)CO - HITRAN':
-        CH4lines = pd.read_csv('12CO_lines_formatted.csv').values
-        tips = pd.read_csv('q26_12CO.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\12CO_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q26_12CO.csv', sep='\s+').values
     elif selected_species == '(14)NH3 - HITRAN':
-        CH4lines = pd.read_csv('14NH3_lines_formatted.csv').values
-        tips = pd.read_csv('q45_14NH3.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\14NH3_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q45_14NH3.csv', sep='\s+').values
     elif selected_species == '(12)C2H6 - HITRAN':
-        CH4lines = pd.read_csv('12C2H6_lines_formatted.csv').values
-        tips = pd.read_csv('q78_12C2H6.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data\\12C2H6_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data\\q78_12C2H6.csv', sep='\s+').values
     return CH4lines, tips
 
 # Define interpolation function for tips data (equivalent to tips1 = @(z) in MATLAB)
@@ -270,7 +270,8 @@ def find_range(x,CH4lines):
     #print(time.time() - t)
     #t = time.time()
 
-    end_x = start_x + 1
+    #end_x = start_x + 1
+    end_x = start_x
     for i in range(start_x,len(CH4lines)):
         if (CH4lines[i, 0] < max(x)):
             end_x = end_x + 1
@@ -287,6 +288,9 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
     # %% Get parameters and their uncertainties
     lines = []
     j = 0
+    print(start_x)
+    print(end_x)
+    print(len(CH4lines))
     for i in range(start_x,end_x): #range(len(CH4lines)):
         if CH4lines[i,1] > s0_min: #(CH4lines[i, 0] > min(x)) and (CH4lines[i, 0] < max(x)):
             #print(CH4lines[i])
@@ -815,20 +819,26 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
             #t = time.time()
 
             #spectra[:, i] += (x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
-            if not (st.session_state.calc_method):
-                spectra[:, i] += voigtfwhm(x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
-            else:
-                X = np.sqrt(np.log(2))*(x-x0_shifted_rand)/(0.5*wG_rand)
-                Y = np.sqrt(np.log(2))*((0.5*wL_rand)/(0.5*wG_rand))
-                spectra[:, i] += voigtfwhm_fast(x, [A_rand, X, Y])/ ((0.5*wG_rand) / np.sqrt(np.log(2)/np.pi))
 
-            #elapsed = time.time() - t
-            #print('time to calculate and add spectrum for a single line based on sampled parameters')
-            #print(elapsed)
+            if not(np.isnan(line[4])):
+                # lower state energy is not nan for this line
+                # if it is the spectrum will not be added
+                if not (st.session_state.calc_method):
+                    spectra[:, i] += voigtfwhm(x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
+                else:
+                    X = np.sqrt(np.log(2))*(x-x0_shifted_rand)/(0.5*wG_rand)
+                    Y = np.sqrt(np.log(2))*((0.5*wL_rand)/(0.5*wG_rand))
+                    spectra[:, i] += voigtfwhm_fast(x, [A_rand, X, Y])/ ((0.5*wG_rand) / np.sqrt(np.log(2)/np.pi))
 
+                #elapsed = time.time() - t
+                #print('time to calculate and add spectrum for a single line based on sampled parameters')
+                #print(elapsed)
+            
             j=j+1
 
         if np.isnan(np.mean(spectra[:, i])):
+            #print(i)
+            #print('spectrum has nan values')
             spectra[:, i] = spectra[:, i - 1]
         
         if simulation_type == 'Emission':
@@ -852,7 +862,6 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_
 
         x0_shifted = x0[j] + P * ((1 - mole_fraction) * delta_air[j] + mole_fraction * delta_self[j])
         # Line strength
-
         S = s0[j] * (tips1(296) / tips1(T)) * np.exp(-(h * c * line[4] / kb) * (1 / T - 1 / 296)) \
                  * (1 - np.exp(-h * c * x0[j] / (kb * T))) / (1 - np.exp(-h * c * x0[j] / (kb * 296)))
         A = S * L * mole_fraction * (P / (R * T))  # cm-1
@@ -865,12 +874,13 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_
         wL = P * (mole_fraction * 2 * gamma_self + (1 - mole_fraction) * 2 * gamma_air)
 
         #spectra[:, i] += (x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
-        if not (st.session_state.calc_method):
-            spectrum_mean_parameters +=  np.transpose(voigtfwhm(x, [A, x0_shifted, wG, wL]))
-        else:
-            X = np.sqrt(np.log(2))*(x-x0_shifted)/(0.5*wG)
-            Y = np.sqrt(np.log(2))*((0.5*wL)/(0.5*wG))
-            spectrum_mean_parameters += voigtfwhm_fast(x, [A, X, Y])/ ((0.5*wG) / np.sqrt(np.log(2)/np.pi))        
+        if not(np.isnan(line[4])):
+            if not (st.session_state.calc_method):
+                spectrum_mean_parameters +=  np.transpose(voigtfwhm(x, [A, x0_shifted, wG, wL]))
+            else:
+                X = np.sqrt(np.log(2))*(x-x0_shifted)/(0.5*wG)
+                Y = np.sqrt(np.log(2))*((0.5*wL)/(0.5*wG))
+                spectrum_mean_parameters += voigtfwhm_fast(x, [A, X, Y])/ ((0.5*wG) / np.sqrt(np.log(2)/np.pi))        
         
         j=j+1
 
@@ -894,7 +904,10 @@ def calc_error_bars(spectra,spectrum_mean_parameters):
 def std_deviation_with_iterations(spectra,spectrum_mean_parameters):
     std_residuals = np.zeros(N_simulations)
     #max_std_index = np.argmax(error_bars)
-    std_index = np.where(np.round(x_limited,3) == st.session_state.wn_conv)[0][0]
+    if (st.session_state.wn_conv == wnend):
+        std_index = np.where(np.round(x_limited,3) == (st.session_state.wn_conv - wnres))[0][0]
+    else:
+        std_index = np.where(np.round(x_limited,3) == (st.session_state.wn_conv))[0][0]
     #print(std_index)
     #print('at ('+str(round(x[std_index],2))+' cm-1')
     #print(max_std_index)
@@ -918,10 +931,15 @@ def std_deviation_with_iterations(spectra,spectrum_mean_parameters):
     #return std_residuals
 
 @st.cache_resource(show_spinner=False,max_entries=3)
-def uncertainty_PDF(spectra):
+def uncertainty_PDF(convergence_frequency,spectra):
     #std_residuals = np.zeros(N_simulations)
     #max_std_index = np.argmax(error_bars)
-    std_index = np.where(np.round(x_limited,3) == st.session_state.wn_conv)[0][0]
+    #print(np.round(x_limited,3))
+    #print(np.where(np.round(x_limited,3) == (st.session_state.wn_conv - wnres))[0][0])
+    if (st.session_state.wn_conv == wnend):
+        std_index = np.where(np.round(x_limited,3) == (st.session_state.wn_conv - wnres))[0][0]
+    else:
+        std_index = np.where(np.round(x_limited,3) == (st.session_state.wn_conv))[0][0]
     #print(std_index)
     #print('at ('+str(round(x[std_index],2))+' cm-1')
     #print(max_std_index)
@@ -976,7 +994,7 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters):
     #print(np.ceil(10*spectra.max())/10)
     #print(spectra.max())
     #scaling_factor = 1*1/(spectra.max())
-    ax.set_ylim(0,type_scale*spectra.max())#np.round(scaling_factor*spectra.max())/scaling_factor)
+    ax.set_ylim(0,1.1*type_scale*spectra.max())#np.round(scaling_factor*spectra.max())/scaling_factor)
     ax.legend(['Mean parameters', 'Unceratinty envelope'])
 
     textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
@@ -1144,6 +1162,7 @@ if wn_validation_flag == 1:
 
         #print(lines)
         if st.session_state.manual_control:
+            # reset values if list of lines have changed
             update_manual_control(lines)
             #print(lines)
             #print('data editor key: '+str(st.session_state.dek))
@@ -1300,7 +1319,7 @@ if wn_validation_flag == 1:
         spectra_limited = np.zeros((len(x_limited), n_simulations))    
         spectra_limited = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type)
 
-        #np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
+        np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
 
         with tab1:
             with st.spinner('Computing spectrum based on mean parameters ...'):
@@ -1332,7 +1351,7 @@ if wn_validation_flag == 1:
 
         with tab1:
             with st.spinner('Calculating and plotting PDF at ('+str(round(x_limited[std_index],2))+' cm-1)...'):
-                fig_4, std_index = uncertainty_PDF(spectra_limited)
+                fig_4, std_index = uncertainty_PDF(convergence_frequency,spectra_limited)
         with tab4:
             st.write('_Histogram of predicted absorbance at ('+str(round(x_limited[std_index],2))+' cm-1). Dashed line indicates predicted absorbance based on mean parameters:_')
             st.pyplot(fig_4)   
