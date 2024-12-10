@@ -1319,7 +1319,7 @@ if wn_validation_flag == 1:
         spectra_limited = np.zeros((len(x_limited), n_simulations))    
         spectra_limited = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type)
 
-        np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
+        #np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
 
         with tab1:
             with st.spinner('Computing spectrum based on mean parameters ...'):
