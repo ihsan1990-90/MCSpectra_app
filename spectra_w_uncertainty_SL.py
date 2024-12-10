@@ -213,29 +213,29 @@ def import_data(selected_species):
     print('importing data')
     # Load data (replace readmatrix and readtable)
     if selected_species == '(12)CH4 - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\12CH4_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q32_12CH4.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/12CH4_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q32_12CH4.csv', sep='\s+').values
     elif selected_species == 'H2(16)O - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\H216O_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q1_H2O16.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/H216O_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q1_H2O16.csv', sep='\s+').values
     elif selected_species == '(12)CO2 - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\12CO2_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q7_12CO2.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/12CO2_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q7_12CO2.csv', sep='\s+').values
     elif selected_species == '(13)CO2 - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\13CO2_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q8_13CO2.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/13CO2_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q8_13CO2.csv', sep='\s+').values
     elif selected_species == '(14)N2O - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\14N2O_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q21_14N2O.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/14N2O_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q21_14N2O.csv', sep='\s+').values
     elif selected_species == '(12)CO - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\12CO_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q26_12CO.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/12CO_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q26_12CO.csv', sep='\s+').values
     elif selected_species == '(14)NH3 - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\14NH3_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q45_14NH3.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/14NH3_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q45_14NH3.csv', sep='\s+').values
     elif selected_species == '(12)C2H6 - HITRAN':
-        CH4lines = pd.read_csv('HITRAN_data\\12C2H6_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data\\q78_12C2H6.csv', sep='\s+').values
+        CH4lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
+        tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
     return CH4lines, tips
 
 # Define interpolation function for tips data (equivalent to tips1 = @(z) in MATLAB)
