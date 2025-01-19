@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import norm, skew
+from scipy.stats import norm, skew, median_abs_deviation
 from voigtfwhm import voigtfwhm
 from voigtfwhm_fast import voigtfwhm_fast
 import io
@@ -152,9 +152,9 @@ with st.sidebar:
     with st.expander('Basic simulation controls',True):
         simulation_type = st.selectbox("Spectrum type", ['Absorbance','Emission'], 0,key='simulation_type')
         selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
-        selected_broadener = st.selectbox("Broadener", broadener_options, 0,key='selected_broadener')
+        selected_broadener = st.selectbox("Bath-gas", broadener_options, 0,key='selected_broadener')
         temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
-        pressure = st.number_input("Pressure (bar)", min_value=0.001, max_value=50.00, value=1.00, step=0.2)
+        pressure = st.number_input("Pressure (atm)", min_value=0.001, max_value=50.00, value=1.00, step=0.2)
         molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
         pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=50000, step=1, value=10)
         wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=0.01, value=1331.00, key='wn_start')
@@ -321,13 +321,13 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
                     if (not(testing_range)) & (flags_array[1] == 0):
                         with st.sidebar:
                             flags_array[1] = 1
-                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                            st.sidebar.warning('Bath-gas temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 if str(line[6]) == 'nan':
                     line[6] = 0
                     if (not(testing_range)) & (flags_array[2] == 0):
                         with st.sidebar:
                             flags_array[2] =1
-                            st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                            st.sidebar.warning('Bath-gas pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
             elif selected_broadener == 'He':
                 line = [
                     CH4lines[i, 0],  # line position
@@ -343,13 +343,13 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
                     if (not(testing_range)) & (flags_array[3] == 0):
                         with st.sidebar:
                             flags_array[3] =1
-                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                            st.sidebar.warning('Bath-gas temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 if str(line[6]) == 'nan':
                     line[6] = 0
                     if (not(testing_range)) & (flags_array[4] == 0):
                         with st.sidebar:
                             flags_array[4] =1
-                            st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                            st.sidebar.warning('Bath-gas pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
             elif selected_broadener == 'CO2':
                 line = [
                     CH4lines[i, 0],  # line position
@@ -365,13 +365,13 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
                     if (not(testing_range)) & (flags_array[5] == 0):
                         with st.sidebar:
                             flags_array[5] =1
-                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                            st.sidebar.warning('Bath-gas temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 if str(line[6]) == 'nan':
                     line[6] = 0
                     if (not(testing_range)) & (flags_array[6] == 0):
                         with st.sidebar:
                             flags_array[6] =1
-                            st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                            st.sidebar.warning('Bath-gas pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
             elif selected_broadener == 'H2O':
                 line = [
                     CH4lines[i, 0],  # line position
@@ -387,11 +387,11 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
                     if (not(testing_range)) & (flags_array[7] == 0):
                         with st.sidebar:
                             flags_array[7] =1
-                            st.sidebar.warning('Broadener temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                            st.sidebar.warning('Bath-gas temperature exponent is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
                 
                 if (not(testing_range)):
                     with st.sidebar:
-                        st.sidebar.warning('Broadener pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
+                        st.sidebar.warning('Bath-gas pressure shift parameter is unavailable for '+str(CH4lines[i, 0])+'. Assumed to be equal to zero.', icon="⚠️")
 
             # Uncertainty handling (equivalent to switch cases in MATLAB)
             for k in [1]:
@@ -889,18 +889,29 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_
         
     return spectrum_mean_parameters
 
+# Calculate relative standard deviation, skewness and percentile based coeffecient of variation
 @st.cache_resource(show_spinner=False,max_entries=3)
 def calc_error_bars(spectra,spectrum_mean_parameters):
     error_bars = np.zeros(len(x_limited))
     relative_uncertainty = np.zeros(len(x_limited))
     skewness = np.zeros(len(x_limited))
+    P90 = np.zeros(len(x_limited))
+    P10 = np.zeros(len(x_limited))
+    PCV = np.zeros(len(x_limited))
+    RMAD = np.zeros(len(x_limited))
     for i in range(len(x_limited)):
         relative_uncertainty[i] = 100*3*np.std(spectra[i][:])/np.mean(spectrum_mean_parameters[i])
         skewness[i] = skew(spectra[i][:])
         error_bars[i] = 3*np.std(spectra[i][:])
+        P90[i] = np.percentile(spectra[i][:], 90)
+        P10[i] = np.percentile(spectra[i][:], 10)
+        # Devide RIQR by 1.35 to make it comparable to standard deviation
+        PCV[i] = (3/1.35)*100*(P90[i] - P10[i])/np.median(spectra[i][:])
+        RMAD[i] = (3/0.6745)*100*median_abs_deviation(spectra[i][:])/np.median(spectra[i][:])
     
-    return relative_uncertainty, error_bars, skewness
-  
+    return relative_uncertainty, error_bars, skewness, P90, P10, PCV, RMAD
+
+# build array with standard deviation value vs the number of iterations  
 def std_deviation_with_iterations(spectra,spectrum_mean_parameters):
     std_residuals = np.zeros(N_simulations)
     #max_std_index = np.argmax(error_bars)
@@ -930,6 +941,7 @@ def std_deviation_with_iterations(spectra,spectrum_mean_parameters):
     
     #return std_residuals
 
+# calculate and plot distribution of results at wn_conv
 @st.cache_resource(show_spinner=False,max_entries=3)
 def uncertainty_PDF(convergence_frequency,spectra):
     #std_residuals = np.zeros(N_simulations)
@@ -960,7 +972,7 @@ def uncertainty_PDF(convergence_frequency,spectra):
     ax.hist(type_scale*spectra[std_index], bins=n_bins, color="#A87BF9")
     ax.axvline(type_scale*spectrum_mean_parameters[std_index], color='white', linestyle='dashed', linewidth=2)
     #textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
-    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations) +'\n' + 'Skewness: ' + str(np.round(skewness[std_index],4))+'\n' + 'Std. Dev.: ' + str(np.round(0.333*error_bars[std_index],4)))
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'Bath-gas: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations) +'\n' + 'Skewness: ' + str(np.round(skewness[std_index],4))+'\n' + 'Std. Dev.: ' + str(np.round(0.333*error_bars[std_index],4)))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props) 
     #ax.set_xlim(0,n_simulations)
@@ -972,7 +984,7 @@ def uncertainty_PDF(convergence_frequency,spectra):
     #return std_residuals
 
 @st.cache_resource(show_spinner=False,max_entries=3)
-def plot_MC_spectra(spectra, spectrum_mean_parameters):
+def plot_MC_spectra(spectra, spectrum_mean_parameters, P90, P10):
     fig_1, ax = plt.subplots()
     #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
     ax.set_xlabel('Wavenumbers (cm-1)')
@@ -984,6 +996,8 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters):
         type_scale = 1E+6
 
     ax.plot(x_limited, type_scale*spectrum_mean_parameters, '-', color='white',zorder=n_simulations+1)
+    #ax.plot(x_limited, type_scale*P90, '--', color="#ECBC7A",zorder=n_simulations+2)
+    #ax.plot(x_limited, type_scale*P10, '--', color="#ECBC7A",zorder=n_simulations+3)
     #ax.plot(x, type_scale*spectrum_mean_parameters, '-', color='black', zorder=n_simulations+1)
 
 
@@ -997,7 +1011,7 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters):
     ax.set_ylim(0,1.1*type_scale*spectra.max())#np.round(scaling_factor*spectra.max())/scaling_factor)
     ax.legend(['Mean parameters', 'Unceratinty envelope'])
 
-    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'Bath-gas: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,verticalalignment='top', bbox=props)
 
@@ -1032,13 +1046,15 @@ def plotting_commands():
     st.pyplot(fig)
 
 @st.cache_resource(show_spinner=False,max_entries=3)
-def plot_uncertainty(relative_uncertainty,skewness):
+def plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD):
     fig_2, ax1 = plt.subplots()
 
     color = (1,1,1,1)
     ax1.set_xlabel('Wavenumbers (cm-1)')
     ax1.set_ylabel('3 x std. dev. (%)', color=color)
     ax1.plot(x_limited, relative_uncertainty, color=color)
+    #ax1.plot(x_limited, PCV, color="#A87BF9")
+    #ax1.plot(x_limited, RMAD, linestyle='--', color="#A87BF9")
     ax1.tick_params(axis='y', labelcolor=color)
     if max(relative_uncertainty) < 100:
         ax1.set_ylim(0,100)
@@ -1057,7 +1073,7 @@ def plot_uncertainty(relative_uncertainty,skewness):
     if abs(max(skewness)) < 1:
         ax2.set_ylim(-1,1)
 
-    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'broadener: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
+    textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'Bath-gas: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0.1)
     #ax1.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
     ax1.annotate(textstr, xy=(0, 1), xytext=(12, -12), va='top', xycoords='axes fraction', textcoords='offset points')
@@ -1329,16 +1345,16 @@ if wn_validation_flag == 1:
 
         with tab1:
             with st.spinner('Plotting simulated spectra ...'):
-                fig_1 = plot_MC_spectra(spectra_limited, spectrum_mean_parameters)
+                relative_uncertainty, error_bars, skewness, P90, P10, PCV, RMAD = calc_error_bars(spectra_limited,spectrum_mean_parameters)
+                fig_1 = plot_MC_spectra(spectra_limited, spectrum_mean_parameters, P90, P10)
         with tab1:
             st.write('_'+simulation_type+' spectrum based on mean line-parameters of '+str(number_of_lines) + ' lines,\nand '+str(n_simulations)+' spectra based on randomly sampled line-parameters:_')
             st.pyplot(fig_1)
 
         with tab1:
             with st.spinner('Calculating and plotting global statistics ...'):
-                relative_uncertainty, error_bars, skewness = calc_error_bars(spectra_limited,spectrum_mean_parameters)
                 #plotting_commands()
-                fig_2 = plot_uncertainty(relative_uncertainty,skewness)
+                fig_2 = plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD)
         with tab2:
             st.write('_Uncertainty spectrum (3 x std.) and skewness spectrum:_')
             st.pyplot(fig_2)    
@@ -1376,7 +1392,7 @@ if wn_validation_flag == 1:
                 with io.BytesIO() as buffer:
                     # Write array to buffer
                     #np.savetxt(buffer, arr_df, delimiter=",")
-                    textstr = ('MCSpectra_'+selected_species + '_' + str(100*mole_fraction)+'_' + '_'+ str(simulation_type) + '_'+ str(T) + '_K_' + str(P) + '_atm_'+ str(L) + '_cm_' + str(wnstart) + '_'+ str(wnend)+ '_broadener_' + str(selected_broadener))
+                    textstr = ('MCSpectra_'+selected_species + '_' + str(100*mole_fraction)+'_' + '_'+ str(simulation_type) + '_'+ str(T) + '_K_' + str(P) + '_atm_'+ str(L) + '_cm_' + str(wnstart) + '_'+ str(wnend)+ '_Bath-gas_' + str(selected_broadener))
                     buffer = pd.DataFrame.to_csv(arr_df, sep=',', index=False, encoding='utf-8')
 
                     st.download_button(
