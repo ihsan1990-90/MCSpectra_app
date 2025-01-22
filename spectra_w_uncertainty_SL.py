@@ -59,6 +59,10 @@ if 'dek' not in st.session_state:
 
 # change wavelength range depending on selected species
 def change_wn_range():
+    if st.session_state.selected_species == 'CH4 - HITRAN':
+        st.session_state.wn_start = 1331
+        st.session_state.wn_end = 1334
+        #st.session_state.self_shift_toggle = 0
     if st.session_state.selected_species == '(12)CH4 - HITRAN':
         st.session_state.wn_start = 1331
         st.session_state.wn_end = 1334
@@ -67,6 +71,9 @@ def change_wn_range():
         st.session_state.wn_start = 3742
         st.session_state.wn_end = 3747
         #st.session_state.self_shift_toggle = 0
+    elif st.session_state.selected_species == 'CO2 - HITRAN':
+        st.session_state.wn_start = 2300
+        st.session_state.wn_end = 2305
     elif st.session_state.selected_species == '(12)CO2 - HITRAN':
         st.session_state.wn_start = 2300
         st.session_state.wn_end = 2305
@@ -95,9 +102,13 @@ def change_wn_range():
 # molar mass of selected species
 def molar_mass():
     if st.session_state.selected_species == '(12)CH4 - HITRAN':
-        M = 16 # Molar mass of CH4 (g/mol)        
+        M = 16 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'CH4 - HITRAN':
+        M = 16.04 # Molar mass of CH4 (g/mol)        
     elif st.session_state.selected_species == 'H2(16)O - HITRAN':
-        M = 18 # Molar mass of CH4 (g/mol)       
+        M = 18 # Molar mass of CH4 (g/mol)  
+    elif st.session_state.selected_species == 'CO2 - HITRAN':
+        M = 44.01 # Molar mass of CH4 (g/mol)     
     elif st.session_state.selected_species == '(12)CO2 - HITRAN':
         M = 44 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == '(13)CO2 - HITRAN':
@@ -109,15 +120,17 @@ def molar_mass():
     elif st.session_state.selected_species == '(14)NH3 - HITRAN':
         M = 17 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == '(12)C2H6 - HITRAN':
-        M = 30 # Molar mass of CH4 (g/mol)
-        
+        M = 30 # Molar mass of CH4 (g/mol)   
     
     return M
         
-species_options = ['(12)CH4 - HITRAN', 'H2(16)O - HITRAN', '(12)CO2 - HITRAN', '(13)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN','(14)NH3 - HITRAN','(12)C2H6 - HITRAN']
+species_options = ['CH4 - HITRAN', '(12)CH4 - HITRAN', 'H2(16)O - HITRAN', 'CO2 - HITRAN', '(12)CO2 - HITRAN', '(13)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN','(14)NH3 - HITRAN','(12)C2H6 - HITRAN']
 
 # preprogrammed list of broadeners for different species
 if not(hasattr(st.session_state,'selected_species')):
+    broadener_options = ['Air','H2O']
+    self_shift_available = False
+elif st.session_state.selected_species == 'CH4 - HITRAN':
     broadener_options = ['Air','H2O']
     self_shift_available = False
 elif st.session_state.selected_species == '(12)CH4 - HITRAN':
@@ -126,6 +139,9 @@ elif st.session_state.selected_species == '(12)CH4 - HITRAN':
 elif st.session_state.selected_species == 'H2(16)O - HITRAN':
     broadener_options = ['Air']
     self_shift_available = False
+elif st.session_state.selected_species == 'CO2 - HITRAN':
+    broadener_options = ['Air','H2','He','H2O']
+    self_shift_available = True
 elif st.session_state.selected_species == '(12)CO2 - HITRAN':
     broadener_options = ['Air','H2','He','H2O']
     self_shift_available = True
@@ -153,7 +169,7 @@ with st.sidebar:
         simulation_type = st.selectbox("Spectrum type", ['Absorbance','Emission'], 0,key='simulation_type')
         selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
         selected_broadener = st.selectbox("Bath-gas", broadener_options, 0,key='selected_broadener')
-        temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
+        temperature = st.number_input("Temperature (K)", min_value=300, max_value=2000, value=300, step=100)
         pressure = st.number_input("Pressure (atm)", min_value=0.001, max_value=50.00, value=1.00, step=0.2)
         molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
         pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=50000, step=1, value=10)
@@ -215,32 +231,73 @@ def import_data(selected_species):
     if selected_species == '(12)CH4 - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/12CH4_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q32_12CH4.csv', sep='\s+').values
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.988274
+    elif selected_species == 'CH4 - HITRAN':
+        CH4lines = pd.read_csv('HITRAN_data/CH4_natural_lines_formatted.csv').values
+        tips = np.genfromtxt('HITRAN_data/q_CH4_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 32
+        isotopologue_abundance = 0.988274
     elif selected_species == 'H2(16)O - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/H216O_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q1_H2O16.csv', sep='\s+').values
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.997317
+    elif selected_species == 'CO2 - HITRAN':
+        CH4lines = pd.read_csv('HITRAN_data/CO2_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_CO2_natural.csv', delimiter=',')
+        num_of_isotopologues = 3
+        first_isotopologue = 7
+        isotopologue_abundance = 1
     elif selected_species == '(12)CO2 - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/12CO2_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q7_12CO2.csv', sep='\s+').values
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.984204
     elif selected_species == '(13)CO2 - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/13CO2_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q8_13CO2.csv', sep='\s+').values
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.0110574
     elif selected_species == '(14)N2O - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/14N2O_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q21_14N2O.csv', sep='\s+').values
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.990333
     elif selected_species == '(12)CO - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/12CO_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q26_12CO.csv', sep='\s+').values
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.986544
     elif selected_species == '(14)NH3 - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/14NH3_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q45_14NH3.csv', sep='\s+').values
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.995872
     elif selected_species == '(12)C2H6 - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
-    return CH4lines, tips
+        num_of_isotopologues = 1
+        first_isotopologue = 0
+        isotopologue_abundance = 0.976990
+    #print('tips data')
+    #print(tips)
+    return CH4lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance
 
 # Define interpolation function for tips data (equivalent to tips1 = @(z) in MATLAB)
-def tips1(z):
-    return np.interp(z, tips[:, 0], tips[:, 1])
+def tips1(z,tips_index):
+    #print('tips_index')
+    #print(tips_index)
+    return np.interp(z, tips[:, 0], tips[:, int(tips_index)])
 
 def plank_emission(x,T):
     Ibb = 2*h*(c**2)*np.divide(np.power(x,3),(np.exp(c*h*x/(kb*T))-1))
@@ -282,7 +339,7 @@ def find_range(x,CH4lines):
 
 # Get parameters and their uncertainties for lines within the range
 @st.cache_resource(show_spinner=False,max_entries=3)
-def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_range):
+def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_range,isotopologue_abundance):
     print('extracting lines')
     flags_array = np.zeros(23)
     # %% Get parameters and their uncertainties
@@ -299,7 +356,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
             if selected_broadener == 'Air':
                 line = [
                     CH4lines[i, 0],  # line position
-                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 1]/isotopologue_abundance,  # line strength
                     CH4lines[i, 2],  # gamma air
                     CH4lines[i, 3],  # gamma self
                     CH4lines[i, 4],  # LES
@@ -309,7 +366,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
             elif selected_broadener == 'H2':
                 line = [
                     CH4lines[i, 0],  # line position
-                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 1]/isotopologue_abundance,  # line strength
                     CH4lines[i, 11],  # gamma H2
                     CH4lines[i, 3],  # gamma self
                     CH4lines[i, 4],  # LES
@@ -331,7 +388,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
             elif selected_broadener == 'He':
                 line = [
                     CH4lines[i, 0],  # line position
-                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 1]/isotopologue_abundance,  # line strength
                     CH4lines[i, 15],  # gamma He
                     CH4lines[i, 3],  # gamma self
                     CH4lines[i, 4],  # LES
@@ -353,7 +410,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
             elif selected_broadener == 'CO2':
                 line = [
                     CH4lines[i, 0],  # line position
-                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 1]/isotopologue_abundance,  # line strength
                     CH4lines[i, 18],  # gamma CO2
                     CH4lines[i, 3],  # gamma self
                     CH4lines[i, 4],  # LES
@@ -375,7 +432,7 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
             elif selected_broadener == 'H2O':
                 line = [
                     CH4lines[i, 0],  # line position
-                    CH4lines[i, 1],  # line strength
+                    CH4lines[i, 1]/isotopologue_abundance,  # line strength
                     CH4lines[i, 21],  # gamma H2O
                     CH4lines[i, 3],  # gamma self
                     CH4lines[i, 4],  # LES
@@ -628,7 +685,8 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
                     elif uncertainty == 7:
                         line.append(1E-5)
 
-            
+            #isotopologue ID
+            line.append(CH4lines[i, 45])
             #print(line)
             lines.append(line)
     #st.text('Number of simulated lines: '+str(len(lines)))
@@ -672,6 +730,7 @@ def extract_parameters(lines):
     n_air = np.zeros(len(lines))
     delta_air = np.zeros(len(lines))
     delta_self = np.zeros(len(lines))
+    isotopologue_ID = np.zeros(len(lines))
 
 
     #fig, ax = plt.subplots()
@@ -695,12 +754,14 @@ def extract_parameters(lines):
         n_air[j] = line[5]
         delta_air[j] = line[6]
         delta_self[j] = line[13]
+        
+        isotopologue_ID[j] = line[15]
 
         j = j + 1
 
     return  x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
     ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range, delta_self_rand_cdf, delta_self_rand_range,\
-    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self
+    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, isotopologue_ID
 
 @st.cache_resource(show_spinner=False,max_entries=3)
 def extract_mean_parameters(lines):
@@ -713,6 +774,7 @@ def extract_mean_parameters(lines):
     n_air = np.zeros(len(lines))
     delta_air = np.zeros(len(lines))
     delta_self = np.zeros(len(lines))
+    isotopologue_ID = np.zeros(len(lines))
 
     #fig, ax = plt.subplots()
 
@@ -739,13 +801,15 @@ def extract_mean_parameters(lines):
         n_air[j] = line[5]
         delta_air[j] = line[6]
         delta_self[j] = line[13]
+        isotopologue_ID[j] = line[15]
+
 
         j = j + 1
     
     if temp_flag_end == False:
         visible_end = j
 
-    return  x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end
+    return  x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID
 
 # Generate distributions for experimental conditions
 def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values):
@@ -759,7 +823,7 @@ def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_u
 
 # Run the simulations
 @st.cache_resource(show_spinner=False)
-def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_method,simulation_type):
+def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_method,simulation_type,num_of_isotopologues, first_isotopologue):
     # Run the simulations
     with tab1:
         my_bar = st.progress(0, text='Monte Carlo simulation progress:')
@@ -783,6 +847,11 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
         for line in lines:
             # Line position
             #t = time.time()
+            if num_of_isotopologues > 1:
+                tips_index = line[15]-first_isotopologue
+            else:
+                tips_index = 0
+
             x0_rand = random_value(x0_rand_cdf[j], x0_rand_range[j])
 
             delta_air_rand = random_value(delta_air_rand_cdf[j], delta_air_rand_range[j])
@@ -792,7 +861,7 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
             # Line strength
 
             S0_rand = random_value(S0_rand_cdf[j], S0_rand_range[j])
-            S_rand = S0_rand * (tips1(296) / tips1(T)) * np.exp(-(h * c * line[4] / kb) * (1 / T_1 - 1 / 296)) \
+            S_rand = S0_rand * (tips1(296,tips_index) / tips1(T,tips_index)) * np.exp(-(h * c * line[4] / kb) * (1 / T_1 - 1 / 296)) \
                      * (1 - np.exp(-h * c * x0_rand / (kb * T_1))) / (1 - np.exp(-h * c * x0_rand / (kb * 296)))
 
             A_rand = S_rand * L_1 * mole_fraction_1 * (P_1 / (R * T_1))  # cm-1
@@ -854,15 +923,19 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
 
 # Calculate mean spectrum
 @st.cache_resource(show_spinner=False,max_entries=3)
-def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type):
+def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type,num_of_isotopologues,first_isotopologue):
     spectrum_mean_parameters = np.zeros(len(x))
     j = 0
     for line in lines:
         # Line position
-
+        if num_of_isotopologues > 1:
+                tips_index = line[15]-first_isotopologue
+        else:
+            tips_index = 0
+        
         x0_shifted = x0[j] + P * ((1 - mole_fraction) * delta_air[j] + mole_fraction * delta_self[j])
         # Line strength
-        S = s0[j] * (tips1(296) / tips1(T)) * np.exp(-(h * c * line[4] / kb) * (1 / T - 1 / 296)) \
+        S = s0[j] * (tips1(296,tips_index) / tips1(T,tips_index)) * np.exp(-(h * c * line[4] / kb) * (1 / T - 1 / 296)) \
                  * (1 - np.exp(-h * c * x0[j] / (kb * T))) / (1 - np.exp(-h * c * x0[j] / (kb * 296)))
         A = S * L * mole_fraction * (P / (R * T))  # cm-1
         # Doppler broadening
@@ -1093,7 +1166,8 @@ wn_validation_flag, wn_change_flag = wn_validation()
 #print(wn_validation_flag)
 if wn_validation_flag == 1:
     t = time.time()    
-    CH4lines, tips = import_data(selected_species)
+    CH4lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance = import_data(selected_species)
+    #mole_fraction = mole_fraction
     num_of_PDF_points = N_PDF_points
     
     testing_range = True
@@ -1102,23 +1176,23 @@ if wn_validation_flag == 1:
     x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
     start_x, end_x = find_range(x,CH4lines)
     start_x_limited, end_x_limited = start_x, end_x
-    lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener, testing_range)
+    lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
     number_of_lines_limited = len(lines)
     #edited_lines = lines
-    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
+    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
     # loop to satisfy the risidual requirement
-    spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+    spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type,num_of_isotopologues,first_isotopologue)
     
     residual = 1
     with tab1:
         with st.spinner('Computing lines strength threshold ...'):
             while residual > max_residual:
                 s0_min = 0.1*s0_min
-                lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener, testing_range)
+                lines = extract_lines(start_x,end_x,CH4lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
                 #print(len(lines))
                 #edited_lines = lines
-                x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
-                extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+                x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
+                extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type,num_of_isotopologues,first_isotopologue)
                 residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
                 #('threshold residual')
                 #print(residual)
@@ -1143,10 +1217,10 @@ if wn_validation_flag == 1:
                     wn_cutoff = wn_cutoff + 10
                     x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
                     extended_start_x, extended_end_x = find_range(x,CH4lines)
-                    lines = extract_lines(extended_start_x,extended_end_x,CH4lines,s0_min, selected_broadener, testing_range)
+                    lines = extract_lines(extended_start_x,extended_end_x,CH4lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
                     #edited_lines = lines
-                    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
-                    extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+                    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
+                    extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_type,num_of_isotopologues,first_isotopologue)
 
                     extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
 
@@ -1167,8 +1241,8 @@ if wn_validation_flag == 1:
 
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
         extended_start_x, extended_end_x = find_range(x,CH4lines)
-        lines = extract_lines(extended_start_x,extended_end_x,CH4lines,s0_min, selected_broadener, testing_range)
-        x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end = extract_mean_parameters(lines)
+        lines = extract_lines(extended_start_x,extended_end_x,CH4lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+        x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
 
         # Range
         #x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)  # Similar to MATLAB's 1331:0.001:1334
@@ -1323,7 +1397,7 @@ if wn_validation_flag == 1:
                 number_of_lines = len(edited_lines)
                 x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
                 ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,delta_self_rand_cdf, delta_self_rand_range,\
-                delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self = extract_parameters(edited_lines)
+                delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, isotopologue_ID = extract_parameters(edited_lines)
 
         #print(st.session_state.exp_unc)
         #print(exp_unc_values != [0,0,0,0])
@@ -1333,13 +1407,13 @@ if wn_validation_flag == 1:
         #st.divider()
 
         spectra_limited = np.zeros((len(x_limited), n_simulations))    
-        spectra_limited = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type)
+        spectra_limited = MC_simulation(edited_lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values, calc_method,simulation_type,num_of_isotopologues, first_isotopologue)
 
         #np.savetxt('sample_results/spectra_for_analysis.csv', spectra_limited, delimiter=',')
 
         with tab1:
             with st.spinner('Computing spectrum based on mean parameters ...'):
-                extended_spectrum_mean_parameters = mean_spectrum_simulation(edited_lines,T,P,mole_fraction,L,x,calc_method,simulation_type)
+                extended_spectrum_mean_parameters = mean_spectrum_simulation(edited_lines,T,P,mole_fraction,L,x,calc_method,simulation_type,num_of_isotopologues,first_isotopologue)
                 extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
                 spectrum_mean_parameters = extended_spectrum_mean_parameters
 
