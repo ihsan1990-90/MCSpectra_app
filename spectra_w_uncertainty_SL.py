@@ -1378,6 +1378,11 @@ if wn_validation_flag == 1:
             max_value=1,
             step=1E-6,
             format="%.1e",
+        ),
+        16: st.column_config.NumberColumn(
+            "ID.",
+            help="Isotopologue ID",
+            disabled=True,
         )
     }
             #print(lines[:])
