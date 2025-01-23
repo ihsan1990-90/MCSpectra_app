@@ -239,7 +239,7 @@ def import_data(selected_species):
         tips = np.genfromtxt('HITRAN_data/q_CH4_natural.csv', delimiter=',')
         num_of_isotopologues = 2
         first_isotopologue = 32
-        isotopologue_abundance = 0.988274
+        isotopologue_abundance = 1
     elif selected_species == 'H2(16)O - HITRAN':
         CH4lines = pd.read_csv('HITRAN_data/H216O_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q1_H2O16.csv', sep='\s+').values
@@ -297,7 +297,7 @@ def import_data(selected_species):
 def tips1(z,tips_index):
     #print('tips_index')
     #print(tips_index)
-    return np.interp(z, tips[:, 0], tips[:, int(tips_index)])
+    return np.interp(z, tips[:, 0], tips[:, int(tips_index+1)])
 
 def plank_emission(x,T):
     Ibb = 2*h*(c**2)*np.divide(np.power(x,3),(np.exp(c*h*x/(kb*T))-1))
