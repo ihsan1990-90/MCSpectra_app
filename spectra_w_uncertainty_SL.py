@@ -59,105 +59,132 @@ if 'dek' not in st.session_state:
 
 # change wavelength range depending on selected species
 def change_wn_range():
-    if st.session_state.selected_species == 'CH4 - HITRAN':
+    if st.session_state.selected_species == 'CH4':
         st.session_state.wn_start = 1331
         st.session_state.wn_end = 1334
         #st.session_state.self_shift_toggle = 0
-    if st.session_state.selected_species == '(12)CH4 - HITRAN':
+    elif st.session_state.selected_species == '(12)CH4':
         st.session_state.wn_start = 1331
         st.session_state.wn_end = 1334
         #st.session_state.self_shift_toggle = 0
-    elif st.session_state.selected_species == 'H2(16)O - HITRAN':
+    elif st.session_state.selected_species == 'H2(16)O':
         st.session_state.wn_start = 3742
         st.session_state.wn_end = 3747
         #st.session_state.self_shift_toggle = 0
-    elif st.session_state.selected_species == 'CO2 - HITRAN':
+    elif st.session_state.selected_species == 'CO2':
         st.session_state.wn_start = 2300
         st.session_state.wn_end = 2305
-    elif st.session_state.selected_species == '(12)CO2 - HITRAN':
-        st.session_state.wn_start = 2300
-        st.session_state.wn_end = 2305
-        #st.session_state.self_shift_toggle = 1
-    elif st.session_state.selected_species == '(13)CO2 - HITRAN':
+    elif st.session_state.selected_species == '(12)CO2':
         st.session_state.wn_start = 2300
         st.session_state.wn_end = 2305
         #st.session_state.self_shift_toggle = 1
-    elif st.session_state.selected_species == '(14)N2O - HITRAN':
+    elif st.session_state.selected_species == '(13)CO2':
+        st.session_state.wn_start = 2300
+        st.session_state.wn_end = 2305
+        #st.session_state.self_shift_toggle = 1
+    elif st.session_state.selected_species == '(14)N2O':
         st.session_state.wn_start = 1285
         st.session_state.wn_end = 1290
         #st.session_state.self_shift_toggle = 1
-    elif st.session_state.selected_species == '(12)CO - HITRAN':
-        st.session_state.wn_start = 2172
-        st.session_state.wn_end = 2182
+    elif st.session_state.selected_species == 'NO':
+        st.session_state.wn_start = 1810
+        st.session_state.wn_end = 1820
         #st.session_state.self_shift_toggle = 1
-    elif st.session_state.selected_species == '(14)NH3 - HITRAN':
+    elif st.session_state.selected_species == '(12)CO':
+        st.session_state.wn_start = 2000
+        st.session_state.wn_end = 2010
+        #st.session_state.self_shift_toggle = 1
+    elif st.session_state.selected_species == 'CO':
+        st.session_state.wn_start = 2000
+        st.session_state.wn_end = 2010
+        #st.session_state.self_shift_toggle = 1
+    elif st.session_state.selected_species == '(14)NH3':
         st.session_state.wn_start = 850
         st.session_state.wn_end = 856
         #st.session_state.self_shift_toggle = 0
-    elif st.session_state.selected_species == '(12)C2H6 - HITRAN':
+    elif st.session_state.selected_species == '(12)C2H6':
+        st.session_state.wn_start = 3009
+        st.session_state.wn_end = 3012
+        #st.session_state.self_shift_toggle = 0
+    elif st.session_state.selected_species == 'O3':
         st.session_state.wn_start = 3009
         st.session_state.wn_end = 3012
         #st.session_state.self_shift_toggle = 0
 
 # molar mass of selected species
 def molar_mass():
-    if st.session_state.selected_species == '(12)CH4 - HITRAN':
+    if st.session_state.selected_species == '(12)CH4':
         M = 16 # Molar mass of CH4 (g/mol)
-    elif st.session_state.selected_species == 'CH4 - HITRAN':
+    elif st.session_state.selected_species == 'CH4':
         M = 16.04 # Molar mass of CH4 (g/mol)        
-    elif st.session_state.selected_species == 'H2(16)O - HITRAN':
+    elif st.session_state.selected_species == 'H2(16)O':
         M = 18 # Molar mass of CH4 (g/mol)  
-    elif st.session_state.selected_species == 'CO2 - HITRAN':
+    elif st.session_state.selected_species == 'CO2':
         M = 44.01 # Molar mass of CH4 (g/mol)     
-    elif st.session_state.selected_species == '(12)CO2 - HITRAN':
+    elif st.session_state.selected_species == '(12)CO2':
         M = 44 # Molar mass of CH4 (g/mol)
-    elif st.session_state.selected_species == '(13)CO2 - HITRAN':
+    elif st.session_state.selected_species == '(13)CO2':
         M = 45 # Molar mass of CH4 (g/mol)        
-    elif st.session_state.selected_species == '(14)N2O - HITRAN':
-        M = 44 # Molar mass of CH4 (g/mol)       
-    elif st.session_state.selected_species == '(12)CO - HITRAN':
+    elif st.session_state.selected_species == '(14)N2O':
+        M = 44 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'NO':
+        M = 30.01 # Molar mass of CH4 (g/mol)       
+    elif st.session_state.selected_species == '(12)CO':
         M = 28 # Molar mass of CH4 (g/mol)
-    elif st.session_state.selected_species == '(14)NH3 - HITRAN':
+    elif st.session_state.selected_species == 'CO':
+        M = 28.01 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == '(14)NH3':
         M = 17 # Molar mass of CH4 (g/mol)
-    elif st.session_state.selected_species == '(12)C2H6 - HITRAN':
-        M = 30 # Molar mass of CH4 (g/mol)   
+    elif st.session_state.selected_species == '(12)C2H6':
+        M = 30 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'O3':
+        M = 48 # Molar mass of CH4 (g/mol)   
     
     return M
         
-species_options = ['CH4 - HITRAN', '(12)CH4 - HITRAN', 'H2(16)O - HITRAN', 'CO2 - HITRAN', '(12)CO2 - HITRAN', '(13)CO2 - HITRAN', '(14)N2O - HITRAN','(12)CO - HITRAN','(14)NH3 - HITRAN','(12)C2H6 - HITRAN']
+species_options = ['CH4', '(12)CH4', 'H2(16)O', 'CO2', '(12)CO2', '(13)CO2', '(14)N2O', 'NO','(12)CO','CO','(14)NH3','(12)C2H6','O3']
 
 # preprogrammed list of broadeners for different species
 if not(hasattr(st.session_state,'selected_species')):
     broadener_options = ['Air','H2O']
     self_shift_available = False
-elif st.session_state.selected_species == 'CH4 - HITRAN':
+elif st.session_state.selected_species == 'CH4':
     broadener_options = ['Air','H2O']
     self_shift_available = False
-elif st.session_state.selected_species == '(12)CH4 - HITRAN':
+elif st.session_state.selected_species == '(12)CH4':
     broadener_options = ['Air','H2O']
     self_shift_available = False
-elif st.session_state.selected_species == 'H2(16)O - HITRAN':
+elif st.session_state.selected_species == 'H2(16)O':
     broadener_options = ['Air']
     self_shift_available = False
-elif st.session_state.selected_species == 'CO2 - HITRAN':
+elif st.session_state.selected_species == 'CO2':
     broadener_options = ['Air','H2','He','H2O']
     self_shift_available = True
-elif st.session_state.selected_species == '(12)CO2 - HITRAN':
+elif st.session_state.selected_species == '(12)CO2':
     broadener_options = ['Air','H2','He','H2O']
     self_shift_available = True
-elif st.session_state.selected_species == '(13)CO2 - HITRAN':
+elif st.session_state.selected_species == '(13)CO2':
     broadener_options = ['Air','H2','He','H2O']
     self_shift_available = True
-elif st.session_state.selected_species == '(14)N2O - HITRAN':
+elif st.session_state.selected_species == '(14)N2O':
     broadener_options = ['Air','He','H2O']
     self_shift_available = True
-elif st.session_state.selected_species == '(12)CO - HITRAN':
+elif st.session_state.selected_species == 'NO':
+    broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == '(12)CO':
     broadener_options = ['Air','H2','He','CO2','H2O']
     self_shift_available = True
-elif st.session_state.selected_species == '(14)NH3 - HITRAN':
+elif st.session_state.selected_species == 'CO':
+    broadener_options = ['Air','H2','He','CO2','H2O']
+    self_shift_available = True
+elif st.session_state.selected_species == '(14)NH3':
     broadener_options = ['Air','H2','He','CO2','H2O']
     self_shift_available = False
-elif st.session_state.selected_species == '(12)C2H6 - HITRAN':
+elif st.session_state.selected_species == '(12)C2H6':
+    broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == 'O3':
     broadener_options = ['Air']
     self_shift_available = False
 
@@ -180,15 +207,15 @@ with st.sidebar:
     #st.subheader('Advanced simulation controls')
     with st.expander('Advanced simulation controls',True):
         N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
-        N_PDF_points = st.number_input('PDF resolution (Number of points)', min_value=50, max_value=100, step=1, value=100)
-        s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-25, max_value=1E-19, value=1E-21, format="%.3e", disabled=True,key='s0_min')
+        #N_PDF_points = st.number_input('PDF resolution (Number of points)', min_value=50, max_value=100, step=1, value=100)
+        #s0_min_input = st.number_input("Line strength threshold (cm-1/(molec.cm-2))", min_value=1E-25, max_value=1E-19, value=1E-21, format="%.3e", disabled=True,key='s0_min')
         max_residual = st.number_input("Max. allowed risidual due to frequency cut-off", min_value=1E-3, max_value=1E-2, value=1E-2, format="%.3e")
         #conv_test = st.toggle("Plot standard deviation vs iterations to test convergence",key='conv_test',value=1, disabled=1)
         conv_test = 1
         if conv_test == 1:
             convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', min_value=min(st.session_state.wn_start,st.session_state.wn_end), max_value=max(st.session_state.wn_start,st.session_state.wn_end), value=min(st.session_state.wn_start,st.session_state.wn_end), key='wn_conv')
         manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
-        calc_method = st.toggle("Less accurate evaluation of the Voigt function",key='calc_method')
+        calc_method = st.toggle("More accurate evaluation of the Voigt function",key='calc_method')
         exp_unc = st.toggle("Account for uncertainty in experimental conditions",key='exp_unc')
         #self_shift_toggle = st.toggle("Account for pressure self-shift",key='self_shift_toggle') #,disabled=self_shift_available
         if st.session_state.exp_unc:
@@ -214,7 +241,7 @@ T = temperature  # Temperature in K
 mole_fraction = molefraction
 P = pressure  # Pressure in atm
 L = pathlength  # Path length in cm
-s0_min = s0_min_input # minimum line strength
+s0_min = 1E-21 #s0_min_input # minimum line strength
 M = molar_mass()  # Molar mass of selected species
 exp_unc_values = [0,0,0,0]
 if st.session_state.exp_unc:
@@ -228,67 +255,87 @@ np.set_printoptions(precision=16)
 def import_data(selected_species):
     print('importing data')
     # Load data (replace readmatrix and readtable)
-    if selected_species == '(12)CH4 - HITRAN':
+    if selected_species == '(12)CH4':
         CH4lines = pd.read_csv('HITRAN_data/12CH4_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q32_12CH4.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.988274
-    elif selected_species == 'CH4 - HITRAN':
+    elif selected_species == 'CH4':
         CH4lines = pd.read_csv('HITRAN_data/CH4_natural_lines_formatted.csv').values
         tips = np.genfromtxt('HITRAN_data/q_CH4_natural.csv', delimiter=',')
         num_of_isotopologues = 2
         first_isotopologue = 32
         isotopologue_abundance = 1
-    elif selected_species == 'H2(16)O - HITRAN':
+    elif selected_species == 'H2(16)O':
         CH4lines = pd.read_csv('HITRAN_data/H216O_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q1_H2O16.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.997317
-    elif selected_species == 'CO2 - HITRAN':
+    elif selected_species == 'CO2':
         CH4lines = pd.read_csv('HITRAN_data/CO2_natural_lines_formatted.csv').values
         #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
         tips = np.genfromtxt('HITRAN_data/q_CO2_natural.csv', delimiter=',')
         num_of_isotopologues = 3
         first_isotopologue = 7
         isotopologue_abundance = 1
-    elif selected_species == '(12)CO2 - HITRAN':
+    elif selected_species == '(12)CO2':
         CH4lines = pd.read_csv('HITRAN_data/12CO2_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q7_12CO2.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.984204
-    elif selected_species == '(13)CO2 - HITRAN':
+    elif selected_species == '(13)CO2':
         CH4lines = pd.read_csv('HITRAN_data/13CO2_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q8_13CO2.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.0110574
-    elif selected_species == '(14)N2O - HITRAN':
+    elif selected_species == '(14)N2O':
         CH4lines = pd.read_csv('HITRAN_data/14N2O_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q21_14N2O.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.990333
-    elif selected_species == '(12)CO - HITRAN':
+    elif selected_species == 'NO':
+        CH4lines = pd.read_csv('HITRAN_data/NO_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_NO_natural.csv', delimiter=',')
+        num_of_isotopologues = 3
+        first_isotopologue = 39
+        isotopologue_abundance = 1
+    elif selected_species == '(12)CO':
         CH4lines = pd.read_csv('HITRAN_data/12CO_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q26_12CO.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.986544
-    elif selected_species == '(14)NH3 - HITRAN':
+    elif selected_species == 'CO':
+        CH4lines = pd.read_csv('HITRAN_data/CO_natural_lines_formatted.csv').values
+        tips = np.genfromtxt('HITRAN_data/q_CO_natural.csv', delimiter=',')
+        num_of_isotopologues = 3
+        first_isotopologue = 26
+        isotopologue_abundance = 1
+    elif selected_species == '(14)NH3':
         CH4lines = pd.read_csv('HITRAN_data/14NH3_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q45_14NH3.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.995872
-    elif selected_species == '(12)C2H6 - HITRAN':
+    elif selected_species == '(12)C2H6':
         CH4lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.976990
+    elif selected_species == 'O3':
+        CH4lines = pd.read_csv('HITRAN_data/O3_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_O3_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 16
+        isotopologue_abundance = 1
     #print('tips data')
     #print(tips)
     return CH4lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance
@@ -345,9 +392,9 @@ def extract_lines(start_x,end_x,CH4lines,s0_min,selected_broadener, testing_rang
     # %% Get parameters and their uncertainties
     lines = []
     j = 0
-    print(start_x)
-    print(end_x)
-    print(len(CH4lines))
+    #print(start_x)
+    #print(end_x)
+    #print(len(CH4lines))
     for i in range(start_x,end_x): #range(len(CH4lines)):
         if CH4lines[i,1] > s0_min: #(CH4lines[i, 0] > min(x)) and (CH4lines[i, 0] < max(x)):
             #print(CH4lines[i])
@@ -708,20 +755,28 @@ def random_value(cdf, range_vals):
 @st.cache_resource(show_spinner=False,max_entries=3)
 def extract_parameters(lines):
     print('extracting parameters and generating distributions')
-    x0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
-    x0_rand_range = np.zeros((len(lines),num_of_PDF_points))
-    S0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
-    S0_rand_range = np.zeros((len(lines),num_of_PDF_points))
-    gamma_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
-    gamma_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
-    gamma_self_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
-    gamma_self_rand_range = np.zeros((len(lines),num_of_PDF_points))
-    n_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
-    n_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
-    delta_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
-    delta_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
-    delta_self_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
-    delta_self_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    #x0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    #x0_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    #S0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    #S0_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    #gamma_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    #gamma_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    #gamma_self_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    #gamma_self_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    #n_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    #n_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    #delta_air_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    #delta_air_rand_range = np.zeros((len(lines),num_of_PDF_points))
+    #delta_self_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
+    #delta_self_rand_range = np.zeros((len(lines),num_of_PDF_points))
+
+    x0_sigma = np.zeros(len(lines))
+    s0_sigma = np.zeros(len(lines))
+    gamma_air_sigma = np.zeros(len(lines))
+    gamma_self_sigma = np.zeros(len(lines))
+    n_air_sigma = np.zeros(len(lines))
+    delta_air_sigma = np.zeros(len(lines))
+    delta_self_sigma = np.zeros(len(lines))
 
     x0 = np.zeros(len(lines))
     s0 = np.zeros(len(lines))
@@ -739,13 +794,22 @@ def extract_parameters(lines):
     for line in lines:
         #print(line)
 
-        x0_rand_cdf[j], x0_rand_range[j] = rand_distribution(line[0], line[7] / 3)
-        S0_rand_cdf[j], S0_rand_range[j] = rand_distribution(line[1], line[1] * (1/100)*line[8] / 3)
-        gamma_air_rand_cdf[j], gamma_air_rand_range[j] = rand_distribution(line[2], line[2] * (1/100)*line[9] / 3)
-        gamma_self_rand_cdf[j], gamma_self_rand_range[j] = rand_distribution(line[3], line[3] * (1/100)*line[10] / 3)
-        n_air_rand_cdf[j], n_air_rand_range[j] = rand_distribution(line[5], line[5] * (1/100)*line[11] / 3)
-        delta_air_rand_cdf[j], delta_air_rand_range[j] = rand_distribution(line[6], line[12] / 3)
-        delta_self_rand_cdf[j], delta_self_rand_range[j] = rand_distribution(line[13], line[14] / 3)
+        #x0_rand_cdf[j], x0_rand_range[j] = rand_distribution(line[0], line[7] / 3)
+        #S0_rand_cdf[j], S0_rand_range[j] = rand_distribution(line[1], line[1] * (1/100)*line[8] / 3)
+        #gamma_air_rand_cdf[j], gamma_air_rand_range[j] = rand_distribution(line[2], line[2] * (1/100)*line[9] / 3)
+        #gamma_self_rand_cdf[j], gamma_self_rand_range[j] = rand_distribution(line[3], line[3] * (1/100)*line[10] / 3)
+        #n_air_rand_cdf[j], n_air_rand_range[j] = rand_distribution(line[5], line[5] * (1/100)*line[11] / 3)
+        #delta_air_rand_cdf[j], delta_air_rand_range[j] = rand_distribution(line[6], line[12] / 3)
+        #delta_self_rand_cdf[j], delta_self_rand_range[j] = rand_distribution(line[13], line[14] / 3)
+
+        x0_sigma[j] = line[7] / 3
+        s0_sigma[j] = line[1] * (1/100)*line[8] / 3
+        gamma_air_sigma[j] = line[2] * (1/100)*line[9] / 3
+        gamma_self_sigma[j] = line[3] * (1/100)*line[10] / 3
+        n_air_sigma[j] = line[5] * (1/100)*line[11] / 3
+        delta_air_sigma[j] = line[12] / 3
+        delta_self_sigma[j] = line[14] / 3
+
 
         x0[j] = line[0]
         s0[j] = line[1]
@@ -759,9 +823,13 @@ def extract_parameters(lines):
 
         j = j + 1
 
-    return  x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
-    ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range, delta_self_rand_cdf, delta_self_rand_range,\
-    delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, isotopologue_ID
+    #return  x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
+    #,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range, delta_self_rand_cdf, delta_self_rand_range,\
+    #delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, isotopologue_ID
+
+    return  x0_sigma, s0_sigma, gamma_air_sigma\
+    ,gamma_self_sigma, n_air_sigma, delta_self_sigma,\
+    delta_air_sigma, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, isotopologue_ID
 
 @st.cache_resource(show_spinner=False,max_entries=3)
 def extract_mean_parameters(lines):
@@ -802,8 +870,6 @@ def extract_mean_parameters(lines):
         delta_air[j] = line[6]
         delta_self[j] = line[13]
         isotopologue_ID[j] = line[15]
-
-
         j = j + 1
     
     if temp_flag_end == False:
@@ -814,17 +880,23 @@ def extract_mean_parameters(lines):
 # Generate distributions for experimental conditions
 def exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values):
     print('generating distributions for experimental uncertainties')
-    molefraction_cdf, molefraction_range = rand_distribution(mole_fraction, mole_fraction * (1/100)*exp_unc_values[0] / 3)
-    pathlength_cdf, pathlength_range = rand_distribution(pathlength, pathlength * (1/100)*exp_unc_values[1] / 3)
-    pressure_cdf, pressure_range = rand_distribution(pressure, pressure * (1/100)*exp_unc_values[2] / 3)
-    temperature_cdf, temperature_range = rand_distribution(temperature, temperature * (1/100)*exp_unc_values[3] / 3)
+    #molefraction_cdf, molefraction_range = rand_distribution(mole_fraction, mole_fraction * (1/100)*exp_unc_values[0] / 3)
+    #pathlength_cdf, pathlength_range = rand_distribution(pathlength, pathlength * (1/100)*exp_unc_values[1] / 3)
+    #pressure_cdf, pressure_range = rand_distribution(pressure, pressure * (1/100)*exp_unc_values[2] / 3)
+    #temperature_cdf, temperature_range = rand_distribution(temperature, temperature * (1/100)*exp_unc_values[3] / 3)
 
-    return molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range
+    mole_fraction_sigma = mole_fraction * (1/100)*exp_unc_values[0] / 3
+    pathlength_sigma = pathlength * (1/100)*exp_unc_values[1] / 3
+    pressure_sigma = pressure * (1/100)*exp_unc_values[2] / 3
+    temperature_sigma = temperature * (1/100)*exp_unc_values[3] / 3
+
+    return mole_fraction_sigma, pathlength_sigma,pressure_sigma,temperature_sigma
 
 # Run the simulations
 @st.cache_resource(show_spinner=False)
 def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_method,simulation_type,num_of_isotopologues, first_isotopologue):
     # Run the simulations
+    #t_1 = time.time()
     with tab1:
         my_bar = st.progress(0, text='Monte Carlo simulation progress:')
     spectra = np.zeros((len(x), n_simulations))
@@ -835,32 +907,43 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
         L_1 = L
         P_1 = P
         T_1 = T
-
+    #t_sampling = 0
+    #t_lineshape = 0
     for i in range(n_simulations):
         j=0
         if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
-            mole_fraction_1 = random_value(molefraction_cdf, molefraction_range)
-            L_1 = random_value(pathlength_cdf, pathlength_range)
-            P_1 = random_value(pressure_cdf, pressure_range)
-            T_1 = random_value(temperature_cdf, temperature_range)
+            mole_fraction_1 = np.random.normal(mole_fraction,mole_fraction_sigma)
+            #random_value(molefraction_cdf, molefraction_range)
+            L_1 = np.random.normal(pathlength,pathlength_sigma)
+            #random_value(pathlength_cdf, pathlength_range)
+            P_1 = np.random.normal(pressure,pressure_sigma)
+            #random_value(pressure_cdf, pressure_range)
+            T_1 = np.random.normal(temperature,temperature_sigma)
+            #random_value(temperature_cdf, temperature_range)
             
         for line in lines:
             # Line position
-            #t = time.time()
             if num_of_isotopologues > 1:
                 tips_index = line[15]-first_isotopologue
             else:
                 tips_index = 0
+            
+            #t_2 = time.time()
+            #x0_rand = random_value(x0_rand_cdf[j], x0_rand_range[j])
+            x0_rand = np.random.normal(x0[j],x0_sigma[j])
 
-            x0_rand = random_value(x0_rand_cdf[j], x0_rand_range[j])
+            #delta_air_rand = random_value(delta_air_rand_cdf[j], delta_air_rand_range[j])
+            delta_air_rand = np.random.normal(delta_air[j],delta_air_sigma[j])
 
-            delta_air_rand = random_value(delta_air_rand_cdf[j], delta_air_rand_range[j])
-            delta_self_rand = random_value(delta_self_rand_cdf[j], delta_self_rand_range[j])
+            delta_self_rand = np.random.normal(delta_self[j],delta_self_sigma[j])
+
             x0_shifted_rand = x0_rand + P_1 * ((1 - mole_fraction_1) * delta_air_rand + mole_fraction_1*delta_self_rand)
 
             # Line strength
 
-            S0_rand = random_value(S0_rand_cdf[j], S0_rand_range[j])
+            #S0_rand = random_value(S0_rand_cdf[j], S0_rand_range[j])
+            S0_rand = np.random.normal(s0[j],s0_sigma[j])
+
             S_rand = S0_rand * (tips1(296,tips_index) / tips1(T,tips_index)) * np.exp(-(h * c * line[4] / kb) * (1 / T_1 - 1 / 296)) \
                      * (1 - np.exp(-h * c * x0_rand / (kb * T_1))) / (1 - np.exp(-h * c * x0_rand / (kb * 296)))
 
@@ -870,30 +953,30 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
             wG_rand = x0_shifted_rand * (7.1623E-7) * np.sqrt(T_1 / M)
 
             # Pressure broadening
-            n_air_rand = random_value(n_air_rand_cdf[j], n_air_rand_range[j])
+            #n_air_rand = random_value(n_air_rand_cdf[j], n_air_rand_range[j])
+            n_air_rand = np.random.normal(n_air[j],n_air_sigma[j])
 
-            gamma_self_rand = random_value(gamma_self_rand_cdf[j], gamma_self_rand_range[j])
+            #gamma_self_rand = random_value(gamma_self_rand_cdf[j], gamma_self_rand_range[j])
+            gamma_self_rand = np.random.normal(gamma_self_0[j],gamma_self_sigma[j])
 
-            gamma_air_rand = random_value(gamma_air_rand_cdf[j], gamma_air_rand_range[j])
+            #gamma_air_rand = random_value(gamma_air_rand_cdf[j], gamma_air_rand_range[j])
+            gamma_air_rand = np.random.normal(gamma_air_0[j],gamma_air_sigma[j])
 
             gamma_self_rand = gamma_self_rand * (296 / T_1) ** n_air_rand
+
             gamma_air_rand = gamma_air_rand * (296 / T_1) ** n_air_rand
 
             wL_rand = P_1 * (mole_fraction_1 * 2 * gamma_self_rand + (1 - mole_fraction_1) * 2 * gamma_air_rand)
-
-            #elapsed = time.time() - t
-            #print('time to sample parameters for a single line')
-            #print(elapsed)
-
-            #t = time.time()
-
+            #t_sampling = t_sampling + (time.time() - t_2)
             #spectra[:, i] += (x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
-
+            #t_3 = time.time()
             if not(np.isnan(line[4])):
                 # lower state energy is not nan for this line
                 # if it is the spectrum will not be added
-                if not (st.session_state.calc_method):
+                if st.session_state.calc_method:
+                    
                     spectra[:, i] += voigtfwhm(x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
+                    
                 else:
                     X = np.sqrt(np.log(2))*(x-x0_shifted_rand)/(0.5*wG_rand)
                     Y = np.sqrt(np.log(2))*((0.5*wL_rand)/(0.5*wG_rand))
@@ -902,7 +985,7 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
                 #elapsed = time.time() - t
                 #print('time to calculate and add spectrum for a single line based on sampled parameters')
                 #print(elapsed)
-            
+            #t_lineshape = t_lineshape + (time.time() - t_3)
             j=j+1
 
         if np.isnan(np.mean(spectra[:, i])):
@@ -915,10 +998,19 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
         #else:
             #ax.plot(x, spectra[:, i], '.', markersize=0.1, color="#A87BF9")
 
+        
         spectra_1[:, i] = np.interp(x_limited, x, spectra[:, i])
+        
+
         my_bar.progress(i/n_simulations, text='Monte Carlo simulation progress')
         
     my_bar.empty()
+    #print('t_sampling')
+    #print(t_sampling)
+    #print('t_lineshape')
+    #print(t_lineshape)
+    #print('t_total')
+    #print(time.time()-t_1)
     return spectra_1
 
 # Calculate mean spectrum
@@ -948,7 +1040,7 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method,simulation_
 
         #spectra[:, i] += (x, [A_rand, x0_shifted_rand, wG_rand, wL_rand])
         if not(np.isnan(line[4])):
-            if not (st.session_state.calc_method):
+            if st.session_state.calc_method:
                 spectrum_mean_parameters +=  np.transpose(voigtfwhm(x, [A, x0_shifted, wG, wL]))
             else:
                 X = np.sqrt(np.log(2))*(x-x0_shifted)/(0.5*wG)
@@ -1168,7 +1260,7 @@ if wn_validation_flag == 1:
     t = time.time()    
     CH4lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance = import_data(selected_species)
     #mole_fraction = mole_fraction
-    num_of_PDF_points = N_PDF_points
+    num_of_PDF_points = 100 #N_PDF_points
     
     testing_range = True
     wn_cutoff = 0
@@ -1400,14 +1492,14 @@ if wn_validation_flag == 1:
         with tab1:
             with st.spinner('Extracting line parameters ...'):
                 number_of_lines = len(edited_lines)
-                x0_rand_cdf, x0_rand_range,S0_rand_cdf, S0_rand_range,gamma_air_rand_cdf, gamma_air_rand_range\
-                ,gamma_self_rand_cdf, gamma_self_rand_range,n_air_rand_cdf, n_air_rand_range,delta_self_rand_cdf, delta_self_rand_range,\
-                delta_air_rand_cdf, delta_air_rand_range, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, isotopologue_ID = extract_parameters(edited_lines)
+                x0_sigma, s0_sigma, gamma_air_sigma\
+                ,gamma_self_sigma, n_air_sigma, delta_self_sigma,\
+                delta_air_sigma, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, isotopologue_ID = extract_parameters(edited_lines)
 
         #print(st.session_state.exp_unc)
         #print(exp_unc_values != [0,0,0,0])
         if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
-            molefraction_cdf, molefraction_range, pathlength_cdf, pathlength_range, pressure_cdf, pressure_range, temperature_cdf, temperature_range = exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values)
+            mole_fraction_sigma, pathlength_sigma,pressure_sigma,temperature_sigma = exp_unc_distributions(mole_fraction, pathlength, pressure, temperature,exp_unc_values)
 
         #st.divider()
 
@@ -1451,8 +1543,12 @@ if wn_validation_flag == 1:
             st.write('_Histogram of predicted absorbance at ('+str(round(x_limited[std_index],2))+' cm-1). Dashed line indicates predicted absorbance based on mean parameters:_')
             st.pyplot(fig_4)   
 
-        print('Elapsed time')
-        print(time.time() - t)
+
+        #print('Elapsed time')
+        #print(time.time() - t)
+        with st.sidebar:
+            st.sidebar.info('Total computation time: '+str(round(time.time() - t,2))+' seconds.', icon="ℹ️")
+
 
         simulation_info = [datetime.datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test]
         #print(simulation_info)
