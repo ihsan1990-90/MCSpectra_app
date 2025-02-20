@@ -462,8 +462,11 @@ def plank_emission(x,T):
 @st.cache_resource(show_spinner=False,max_entries=3)
 def find_range(x,selected_species_lines):
     #print('finding start and end indices')
-    start_x = np.where(np.round(selected_species_lines[:, 0],0) == np.round(min(x),0))[0][0]
-    end_x = np.where(np.round(selected_species_lines[:, 0],0) == np.round(max(x),0))[0][-1]
+    #start_x = np.where(np.round(selected_species_lines[:, 0],0) == np.round(min(x),0))[0][0]
+    
+    start_x = np.where(((min(x) - selected_species_lines[:, 0]) < 10) & ((min(x) - selected_species_lines[:, 0]) >= 0))[0][-1]
+    
+    end_x = np.where(((selected_species_lines[:, 0] - max(x)) < 10) & ((selected_species_lines[:, 0] - max(x)) > 0) )[0][0]
     
     return start_x, end_x
 
