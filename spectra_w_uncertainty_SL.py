@@ -131,6 +131,9 @@ def change_wn_range():
     elif st.session_state.selected_species == 'HF':
         st.session_state.wn_start = 3876
         st.session_state.wn_end = 3879
+    elif st.session_state.selected_species == 'SO2':
+        st.session_state.wn_start = 1135
+        st.session_state.wn_end = 1140
     # adjust x-axis range along with the simulation range
     st.session_state.xaxis_start = st.session_state.wn_start
     st.session_state.xaxis_end = st.session_state.wn_end
@@ -175,12 +178,14 @@ def molar_mass():
     elif st.session_state.selected_species == 'HF':
         M = 20 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'CH3OH':
-        M = 32.04 # Molar mass of CH4 (g/mol)   
+        M = 32.04 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'SO2':
+        M = 64.066 # Molar mass of CH4 (g/mol)    
     
     return M
 
 # list of species for which species are available in the /HITRAN_data        
-species_options = ['CH4', '(12)CH4', 'H2(16)O', 'CO2', '(12)CO2', '(13)CO2', '(14)N2O', 'NO','(12)CO','CO','(14)NH3','(12)C2H6','C2H6','O3','HF','CH3OH']
+species_options = ['CH4', '(12)CH4', 'H2(16)O', 'CO2', '(12)CO2', '(13)CO2', '(14)N2O', 'NO','(12)CO','CO','(14)NH3','(12)C2H6','C2H6','O3','HF','CH3OH','SO2']
 
 # pre-programmed list of broadeners for different species
 # also indicates whether self-shift parameter data is available 
@@ -235,6 +240,9 @@ elif st.session_state.selected_species == 'HF':
     self_shift_available = False
 elif st.session_state.selected_species == 'CH3OH':
     broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == 'SO2':
+    broadener_options = ['Air','H2','He']
     self_shift_available = False
 
 # the following section of the code contains the components listed in the sidebar
@@ -441,6 +449,13 @@ def import_data(selected_species):
         first_isotopologue = 0
         isotopologue_abundance = 1
         rotational_constant = 4.26 #cm-1
+    elif selected_species == 'SO2':
+        selected_species_lines = pd.read_csv('HITRAN_data/SO2_natural_lines_formatted.csv').values
+        tips = np.genfromtxt('HITRAN_data/q_SO2_natural.csv', delimiter=',')
+        num_of_isotopologues = 3
+        first_isotopologue = 42
+        isotopologue_abundance = 1
+        rotational_constant = 0.001451 #cm-1
     
     return selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant
 
