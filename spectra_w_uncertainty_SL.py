@@ -1047,6 +1047,7 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
     #t_lineshape = 0
     # Outer loop, repeats as many times as requested by the user (n_simulations)
     for i in range(n_simulations):
+        t_1 = time.time()
         j=0
         # if uncertainty in physical conditions is of interest, the lines within the conditional are executed
         if (st.session_state.exp_unc & (exp_unc_values != [0,0,0,0])):
@@ -1147,7 +1148,9 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
         # add the spectrum instance to the array of spectra
         spectra_1[:, i] = np.interp(x_limited, x, spectra[:, i])
         # update progress bar for user
-        my_bar.progress(i/n_simulations, text='Monte Carlo simulation progress')
+        estimated_time = (time.time() - t_1)*(n_simulations-i)
+        if (i/10)%10 == 0:
+            my_bar.progress(i/n_simulations, text='Monte Carlo simulation progress (estimated remaining time: '+str(np.round(estimated_time,0))+' sec.)')
         
     my_bar.empty()
     #print('t_sampling')
