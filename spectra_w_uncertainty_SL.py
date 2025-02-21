@@ -134,6 +134,9 @@ def change_wn_range():
     elif st.session_state.selected_species == 'SO2':
         st.session_state.wn_start = 1135
         st.session_state.wn_end = 1140
+    elif st.session_state.selected_species == 'NO2':
+        st.session_state.wn_start = 1600
+        st.session_state.wn_end = 1605
     # adjust x-axis range along with the simulation range
     st.session_state.xaxis_start = st.session_state.wn_start
     st.session_state.xaxis_end = st.session_state.wn_end
@@ -180,12 +183,14 @@ def molar_mass():
     elif st.session_state.selected_species == 'CH3OH':
         M = 32.04 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'SO2':
-        M = 64.066 # Molar mass of CH4 (g/mol)    
+        M = 64.066 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'NO2':
+        M = 46.0055 # Molar mass of CH4 (g/mol)     
     
     return M
 
 # list of species for which species are available in the /HITRAN_data        
-species_options = ['CH4', '(12)CH4', 'H2(16)O', 'CO2', '(12)CO2', '(13)CO2', '(14)N2O', 'NO','(12)CO','CO','(14)NH3','(12)C2H6','C2H6','O3','HF','CH3OH','SO2']
+species_options = ['CH4', '(12)CH4', 'H2(16)O', 'CO2', '(12)CO2', '(13)CO2', '(14)N2O', 'NO','(12)CO','CO','(14)NH3','(12)C2H6','C2H6','O3','HF','CH3OH','SO2','NO2']
 
 # pre-programmed list of broadeners for different species
 # also indicates whether self-shift parameter data is available 
@@ -243,6 +248,9 @@ elif st.session_state.selected_species == 'CH3OH':
     self_shift_available = False
 elif st.session_state.selected_species == 'SO2':
     broadener_options = ['Air','H2','He']
+    self_shift_available = False
+elif st.session_state.selected_species == 'NO2':
+    broadener_options = ['Air']
     self_shift_available = False
 
 # the following section of the code contains the components listed in the sidebar
@@ -456,6 +464,13 @@ def import_data(selected_species):
         first_isotopologue = 42
         isotopologue_abundance = 1
         rotational_constant = 0.001451 #cm-1
+    elif selected_species == 'NO2':
+        selected_species_lines = pd.read_csv('HITRAN_data/NO2_natural_lines_formatted.csv').values
+        tips = np.genfromtxt('HITRAN_data/q_NO2_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 44
+        isotopologue_abundance = 1
+        rotational_constant = 8.0012 #cm-1
     
     return selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant
 
@@ -1417,28 +1432,11 @@ def plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD, xaxis_start,xaxis
 def update_manual_control(lines):
     st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
 
-
-wn_validation_flag, wn_change_flag = wn_validation()
-
-
-#xaxis_validation()
-#print(wn_validation_flag)
-def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_broadener,T,P,mole_fraction,L,calc_method_wofz,simulation_type):
-    t = time.time()
-    # import HITRAN data from csv file    
-    selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant = import_data(selected_species)
-    
-    # evaluate line spacing for frequency cut-off calculations 
-    line_spacing = 2*rotational_constant
-    if line_spacing > 10:
-        wn_step = line_spacing
-    else:
-        wn_step = 10
-    
+@st.cache_resource(show_spinner=False)
+def find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips):
     # extract lines of interest from imported data
     testing_range = True
     wn_cutoff = 0
-    x_limited = np.arange(wnstart, wnend, wnres)
     x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
     start_x, end_x = find_range(x,selected_species_lines)
     #start_x_limited, end_x_limited = start_x, end_x
@@ -1480,42 +1478,73 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
 
     s0_min = 10*s0_min
     with st.sidebar:
-        st.sidebar.info(f'Line strength threshold set at {s0_min:.1e} (cm-1/(molec.cm-2))', icon="ℹ️")
+        st.sidebar.info(f'Line strength threshold set at {s0_min:.1e} (cm-1/(molec.cm-2)). Max residual: {residual:.2%}.', icon="ℹ️")
     #st.session_state.s0_min = s0_min
     #print('line strength threshold')
     #print(s0_min)
+
+    return s0_min, lines, spectrum_mean_parameters
+
+@st.cache_resource(show_spinner=False)
+def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited,spectrum_mean_parameters):
+    # evaluate line spacing for frequency cut-off calculations
+    wn_cutoff = 0
+    testing_range = True
+    line_spacing = 2*rotational_constant
+    if line_spacing > 10:
+        wn_step = line_spacing
+    else:
+        wn_step = 10
+    # gradual expansion of covered wavelength range
+    with tab1:
+        with st.spinner('Computing cut-off frequency ...'):
+            residual = 1
+            while residual > max_residual:
+                wn_cutoff = wn_cutoff + wn_step
+                x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
+                extended_start_x, extended_end_x = find_range(x,selected_species_lines)
+                lines = extract_lines(extended_start_x,extended_end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+                #edited_lines = lines
+                x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
+                extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self)
+                extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
+                # reevaluate extended_spectrum_mean_parameters at original x_range points and store to extended_spectrum_mean_parameters
+                #residual = max(np.divide(extended_spectrum_mean_parameters - spectrum_mean_parameters,extended_spectrum_mean_parameters))
+                residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
+                start_x = extended_start_x
+                end_x = extended_end_x
+                spectrum_mean_parameters = extended_spectrum_mean_parameters
+                #print(wn_cutoff)
+                #print(residual)
+    
+    wn_cutoff = wn_cutoff - wn_step
+    # inform user about the selected cut-off frequency 
+    with st.sidebar:
+        st.sidebar.success('Lines within '+str(wnstart - wn_cutoff)+' - '+str(wnend + wn_cutoff)+' cm-1 will be included in the simulation for enhanced accuracy within the selected wavenumber range.', icon="✅")
+
+    return wn_cutoff
+
+
+#xaxis_validation()
+#print(wn_validation_flag)
+def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_broadener,T,P,mole_fraction,L,calc_method_wofz,simulation_type):
+    t = time.time()
+    # import HITRAN data from csv file    
+    selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant = import_data(selected_species)
+    
+    s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips)
+    
+    x_limited = np.arange(wnstart, wnend, wnres)
+
     number_of_lines_limited = len(lines)
     if number_of_lines_limited == 0:
         max_residual = 1
         st.warning('No lines within the selected frequency range.', icon="⚠️")
     else:
-        # gradual expansion of covered wavelength range
-        with tab1:
-            with st.spinner('Computing cut-off frequency ...'):
-                residual = 1
-                while residual > max_residual:
-                    wn_cutoff = wn_cutoff + wn_step
-                    x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
-                    extended_start_x, extended_end_x = find_range(x,selected_species_lines)
-                    lines = extract_lines(extended_start_x,extended_end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
-                    #edited_lines = lines
-                    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
-                    extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self)
-                    extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
-                    # reevaluate extended_spectrum_mean_parameters at original x_range points and store to extended_spectrum_mean_parameters
-                    #residual = max(np.divide(extended_spectrum_mean_parameters - spectrum_mean_parameters,extended_spectrum_mean_parameters))
-                    residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
-                    start_x = extended_start_x
-                    end_x = extended_end_x
-                    spectrum_mean_parameters = extended_spectrum_mean_parameters
-                    #print(wn_cutoff)
-                    #print(residual)
-        testing_range = False
-        wn_cutoff = wn_cutoff - wn_step
-        # inform user about the selected cut-off frequency 
-        with st.sidebar:
-            st.success('Lines within '+str(wnstart - wn_cutoff)+' - '+str(wnend + wn_cutoff)+' cm-1 will be included in the simulation for enhanced accuracy within the selected wavenumber range.', icon="✅")
+        
+        wn_cutoff = find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited,spectrum_mean_parameters)
 
+        testing_range = False
         # final extraction of lines and parameters after theshold and cut-off have been determined
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
         extended_start_x, extended_end_x = find_range(x,selected_species_lines)
@@ -1526,8 +1555,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         if st.session_state.manual_control:
             # reset values if list of simulation parameters have changed
             update_manual_control(lines)
-            
-            
+                       
             st.divider() 
             st.write('_Editable list of parameters for lines within the selected range:_')
             # table configuration
@@ -1779,6 +1807,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
                         mime='text/csv'
                     )
 
+wn_validation_flag, wn_change_flag = wn_validation()
 # run main() function if simulation parameters are valid
 if wn_validation_flag == 1:
     if not(st.session_state.survey_mode):
