@@ -281,7 +281,7 @@ with st.sidebar:
         xaxis_end = st.number_input('x-axis max (cm-1)', step=1.0, value=1334.00, on_change=xaxis_validation, key='xaxis_end')
         conv_test = 1
         if conv_test == 1:
-            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', step=1.0, min_value=min(st.session_state.wn_start,st.session_state.wn_end), max_value=max(st.session_state.wn_start,st.session_state.wn_end), value=min(st.session_state.wn_start,st.session_state.wn_end), key='wn_conv')
+            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', step=1.0, min_value=float(min(st.session_state.wn_start,st.session_state.wn_end)), max_value=float(max(st.session_state.wn_start,st.session_state.wn_end)), value=float(min(st.session_state.wn_start,st.session_state.wn_end)), key='wn_conv')
     
     # Advanced simulation controls
     with st.expander('Advanced simulation controls',True):
