@@ -11,6 +11,7 @@ import uuid
 import datetime
 import csv
 import time
+import math
 
 # General page configuration
 st.set_page_config(
@@ -276,11 +277,11 @@ with st.sidebar:
     with st.expander('Plotting controls',True):
         if 'xaxis_end' not in st.session_state:
             st.session_state.xaxis_end = wnend
-        xaxis_start = st.number_input('x-axis min (cm-1)', help="Use x-axis min and max to zoom into portions of simulated spectra without having to rerun the simulations." , step=0.1, value=1331.00, on_change=xaxis_validation, key='xaxis_start')
-        xaxis_end = st.number_input('x-axis max (cm-1)', step=0.1, value=1334.00, on_change=xaxis_validation, key='xaxis_end')
+        xaxis_start = st.number_input('x-axis min (cm-1)', help="Use x-axis min and max to zoom into portions of simulated spectra without having to rerun the simulations." , step=1.0, value=1331.00, on_change=xaxis_validation, key='xaxis_start')
+        xaxis_end = st.number_input('x-axis max (cm-1)', step=1.0, value=1334.00, on_change=xaxis_validation, key='xaxis_end')
         conv_test = 1
         if conv_test == 1:
-            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', min_value=min(st.session_state.wn_start,st.session_state.wn_end), max_value=max(st.session_state.wn_start,st.session_state.wn_end), value=min(st.session_state.wn_start,st.session_state.wn_end), key='wn_conv')
+            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', step=1.0, min_value=min(st.session_state.wn_start,st.session_state.wn_end), max_value=max(st.session_state.wn_start,st.session_state.wn_end), value=min(st.session_state.wn_start,st.session_state.wn_end), key='wn_conv')
     
     # Advanced simulation controls
     with st.expander('Advanced simulation controls',True):
@@ -494,10 +495,17 @@ def find_range(x,selected_species_lines):
     #print('finding start and end indices')
     #start_x = np.where(np.round(selected_species_lines[:, 0],0) == np.round(min(x),0))[0][0]
     
-    start_x = np.where(((min(x) - selected_species_lines[:, 0]) < 10) & ((min(x) - selected_species_lines[:, 0]) >= 0))[0][-1]
+    #print('where test')
+    #print(np.where(np.abs(min(x) - selected_species_lines[:, 0]) == min(np.abs(min(x) - selected_species_lines[:, 0])))[0])
+    #start_x = np.where(((min(x) - selected_species_lines[:, 0]) < 10) & ((min(x) - selected_species_lines[:, 0]) >= 0))[0][-1]
+    start_x = np.where(np.abs(min(x) - selected_species_lines[:, 0]) == min(np.abs(min(x) - selected_species_lines[:, 0])))[0][0]
+
+    #print(np.where(np.abs(selected_species_lines[:, 0] - max(x)) == min(np.abs(selected_species_lines[:, 0] - max(x))))[0] )
+    #end_x = np.where(((selected_species_lines[:, 0] - max(x)) < 10) & ((selected_species_lines[:, 0] - max(x)) > 0) )[0][0]
+    end_x = np.where(np.abs(selected_species_lines[:, 0] - max(x)) == min(np.abs(selected_species_lines[:, 0] - max(x))))[0][0]
     
-    end_x = np.where(((selected_species_lines[:, 0] - max(x)) < 10) & ((selected_species_lines[:, 0] - max(x)) > 0) )[0][0]
-    
+
+
     return start_x, end_x
 
 # Extract the line parameters and their uncertainties for lines within the range
@@ -951,7 +959,11 @@ def extract_parameters(lines):
         gamma_self_0[j] = line[3]
         n_air[j] = line[5]
         delta_air[j] = line[6]
-        delta_self[j] = line[13]
+
+        if  np.isnan(line[13]):
+            delta_self[j] = 0
+        else:
+            delta_self[j] = line[13]
         
         isotopologue_ID[j] = line[15]
 
@@ -1003,7 +1015,13 @@ def extract_mean_parameters(lines):
         gamma_self_0[j] = line[3]
         n_air[j] = line[5]
         delta_air[j] = line[6]
-        delta_self[j] = line[13]
+
+
+        if  np.isnan(line[13]):
+            delta_self[j] = 0
+        else:
+            delta_self[j] = line[13]
+
         isotopologue_ID[j] = line[15]
         j = j + 1
     
@@ -1441,22 +1459,10 @@ def update_manual_control(lines):
     st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
 
 @st.cache_resource(show_spinner=False)
-def find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips):
+def find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines):
     # extract lines of interest from imported data
     testing_range = True
-    wn_cutoff = 0
-    x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
-    start_x, end_x = find_range(x,selected_species_lines)
-    #start_x_limited, end_x_limited = start_x, end_x
-    lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
-    number_of_lines_limited = len(lines)
-    
-    # the following while loop determines the starting line strength threshold
-    while (number_of_lines_limited == 0) and (s0_min > 1E-40):
-        s0_min = 0.1*s0_min
-        lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
-        number_of_lines_limited = len(lines)
-    
+        
     # import line parameters from extracted lines
     x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
     
@@ -1494,9 +1500,8 @@ def find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener,
     return s0_min, lines, spectrum_mean_parameters
 
 @st.cache_resource(show_spinner=False)
-def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited,spectrum_mean_parameters):
+def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited):
     # evaluate line spacing for frequency cut-off calculations
-    wn_cutoff = 0
     testing_range = True
     line_spacing = 2*rotational_constant
     if line_spacing > 10:
@@ -1504,10 +1509,18 @@ def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selecte
     else:
         wn_step = 10
     # gradual expansion of covered wavelength range
+    wn_cutoff = 0
+    x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
+    extended_start_x, extended_end_x = find_range(x,selected_species_lines)
+    lines = extract_lines(extended_start_x,extended_end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+    x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
+    spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self)
     with tab1:
         with st.spinner('Computing cut-off frequency ...'):
             residual = 1
             while residual > max_residual:
+                start_x = extended_start_x
+                end_x = extended_end_x
                 wn_cutoff = wn_cutoff + wn_step
                 x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
                 extended_start_x, extended_end_x = find_range(x,selected_species_lines)
@@ -1519,8 +1532,7 @@ def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selecte
                 # reevaluate extended_spectrum_mean_parameters at original x_range points and store to extended_spectrum_mean_parameters
                 #residual = max(np.divide(extended_spectrum_mean_parameters - spectrum_mean_parameters,extended_spectrum_mean_parameters))
                 residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
-                start_x = extended_start_x
-                end_x = extended_end_x
+                
                 spectrum_mean_parameters = extended_spectrum_mean_parameters
                 #print(wn_cutoff)
                 #print(residual)
@@ -1530,7 +1542,7 @@ def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selecte
     with st.sidebar:
         st.sidebar.success('Lines within '+str(wnstart - wn_cutoff)+' - '+str(wnend + wn_cutoff)+' cm-1 will be included in the simulation for enhanced accuracy within the selected wavenumber range.', icon="✅")
 
-    return wn_cutoff
+    return wn_cutoff, start_x, end_x
 
 
 #xaxis_validation()
@@ -1539,19 +1551,34 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
     t = time.time()
     # import HITRAN data from csv file    
     selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant = import_data(selected_species)
-    
-    s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips)
-    
+
+    # expand wavenumber range before testing for threshold range
+    # this would help in case a range is chosen where no lines exist within range, but do exist just outside of the range
     x_limited = np.arange(wnstart, wnend, wnres)
+
+    # start_x and end_x are indices which defines all lines from the database that are relavant to the selected range
+    wn_cutoff, start_x, end_x = find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited)
+    
+    # 'lines' is the list of lines that will go into the spectra simulations after excluding lines below the line-strength threshold
+    testing_range = True
+    lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+    number_of_lines_limited = len(lines)
+    
+    # while loop to determine the starting line strength threshold
+    while (number_of_lines_limited == 0) and (s0_min > 1E-40):
+        s0_min = 0.1*s0_min
+        lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+        number_of_lines_limited = len(lines)
+
 
     number_of_lines_limited = len(lines)
     if number_of_lines_limited == 0:
         max_residual = 1
         st.warning('No lines within the selected frequency range.', icon="⚠️")
     else:
-        
-        wn_cutoff = find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited,spectrum_mean_parameters)
-
+        x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
+        s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines)
+    
         testing_range = False
         # final extraction of lines and parameters after theshold and cut-off have been determined
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
