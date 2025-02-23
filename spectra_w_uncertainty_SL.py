@@ -1459,7 +1459,7 @@ def update_manual_control(lines):
     st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
 
 @st.cache_resource(show_spinner=False)
-def find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines):
+def find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines):
     # extract lines of interest from imported data
     testing_range = True
         
@@ -1557,8 +1557,15 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
     x_limited = np.arange(wnstart, wnend, wnres)
 
     # start_x and end_x are indices which defines all lines from the database that are relavant to the selected range
-    wn_cutoff, start_x, end_x = find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited)
-    
+    # s0_min set at '0' to include all lines during frequency cut-off determination
+    if not(st.session_state.survey_mode):
+        wn_cutoff, start_x, end_x = find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,0, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited)
+    else:
+        wn_cutoff = 20*P
+        x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
+        start_x, end_x = find_range(x,selected_species_lines)
+        with st.sidebar:
+            st.sidebar.success('Lines within '+str(wnstart - wn_cutoff)+' - '+str(wnend + wn_cutoff)+' cm-1 will be included in the simulation for enhanced accuracy within the selected wavenumber range.', icon="✅")
     # 'lines' is the list of lines that will go into the spectra simulations after excluding lines below the line-strength threshold
     testing_range = True
     lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
@@ -1577,7 +1584,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         st.warning('No lines within the selected frequency range.', icon="⚠️")
     else:
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
-        s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, wnstart, wnend, wnres, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines)
+        s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines)
     
         testing_range = False
         # final extraction of lines and parameters after theshold and cut-off have been determined
