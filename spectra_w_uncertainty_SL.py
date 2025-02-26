@@ -1459,7 +1459,7 @@ def update_manual_control(lines):
     st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
 
 @st.cache_resource(show_spinner=False)
-def find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines):
+def find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,extended_start_x,extended_end_x,lines, x_limited, max_residual):
     # extract lines of interest from imported data
     testing_range = True
         
@@ -1468,29 +1468,30 @@ def find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, 
     
     # calculate a spectrum based on mean parameter to initiate the residual calculation loop 
     spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self)
-    
+    spectrum_mean_parameters = np.interp(x_limited, x, spectrum_mean_parameters)
     residual = 1
     with tab1:
-        with st.spinner('Computing lines strength threshold ...'):
+        with st.spinner('Computing line strength threshold ...'):
             # loop to satisfy the risidual requirement
             while residual > max_residual:
                 # decrease line strength threshold by a factor of 10
-                s0_min = s0_min/10
+                s0_min = s0_min/2#/10
                 # repeat line extraction
-                lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+                lines = extract_lines(extended_start_x,extended_end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
                 # repeat parameter extraction
                 x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self, visible_start, visible_end, isotopologue_ID = extract_mean_parameters(lines)
                 # repeat spectrum calculation
                 extended_spectrum_mean_parameters = mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self)
+                extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
                 # calculate maximum residual
-                residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
+                residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(extended_spectrum_mean_parameters)
                 
                 #residual = max(np.divide(extended_spectrum_mean_parameters - spectrum_mean_parameters,spectrum_mean_parameters))
                 
                 # update spectrum
                 spectrum_mean_parameters = extended_spectrum_mean_parameters
 
-    s0_min = 10*s0_min
+    s0_min = 2*s0_min
     with st.sidebar:
         st.sidebar.info(f'Line strength threshold set at {s0_min:.1e} (cm-1/(molec.cm-2)). Max residual: {residual:.2%}.', icon="ℹ️")
     #st.session_state.s0_min = s0_min
@@ -1531,7 +1532,7 @@ def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selecte
                 extended_spectrum_mean_parameters = np.interp(x_limited, x, extended_spectrum_mean_parameters)
                 # reevaluate extended_spectrum_mean_parameters at original x_range points and store to extended_spectrum_mean_parameters
                 #residual = max(np.divide(extended_spectrum_mean_parameters - spectrum_mean_parameters,extended_spectrum_mean_parameters))
-                residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(spectrum_mean_parameters)
+                residual = max(extended_spectrum_mean_parameters - spectrum_mean_parameters)/max(extended_spectrum_mean_parameters)
                 
                 spectrum_mean_parameters = extended_spectrum_mean_parameters
                 #print(wn_cutoff)
@@ -1552,29 +1553,32 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
     # import HITRAN data from csv file    
     selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant = import_data(selected_species)
 
-    # expand wavenumber range before testing for threshold range
-    # this would help in case a range is chosen where no lines exist within range, but do exist just outside of the range
+    # 'x_limited' is an array representing the wavenumber range selected by the user
+    # used below for interpolating spectra calculated over an extended range
     x_limited = np.arange(wnstart, wnend, wnres)
 
-    # start_x and end_x are indices which defines all lines from the database that are relavant to the selected range
+    # expand wavenumber range before testing for threshold range
+    # this would help in case a range is chosen where no lines exist within range, but do exist just outside of the range
+    # start_x and end_x are indices which define all lines from the database that are within the selected range (before extending the range)
+    # extended_start_x and extended end_x are indices which define all lines from the database that are relavant to the selected range (after extending the range)
     # s0_min set at '0' to include all lines during frequency cut-off determination
     if not(st.session_state.survey_mode):
-        wn_cutoff, start_x, end_x = find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,0, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited)
+        wn_cutoff, extended_start_x, extended_end_x = find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,0, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited)
     else:
         wn_cutoff = 20*P
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
-        start_x, end_x = find_range(x,selected_species_lines)
+        extended_start_x, extended_end_x = find_range(x,selected_species_lines)
         with st.sidebar:
             st.sidebar.success('Lines within '+str(wnstart - wn_cutoff)+' - '+str(wnend + wn_cutoff)+' cm-1 will be included in the simulation for enhanced accuracy within the selected wavenumber range.', icon="✅")
     # 'lines' is the list of lines that will go into the spectra simulations after excluding lines below the line-strength threshold
     testing_range = True
-    lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+    lines = extract_lines(extended_start_x, extended_end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
     number_of_lines_limited = len(lines)
     
     # while loop to determine the starting line strength threshold
     while (number_of_lines_limited == 0) and (s0_min > 1E-40):
         s0_min = 0.1*s0_min
-        lines = extract_lines(start_x,end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
+        lines = extract_lines(extended_start_x, extended_end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
         number_of_lines_limited = len(lines)
 
 
@@ -1584,7 +1588,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         st.warning('No lines within the selected frequency range.', icon="⚠️")
     else:
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
-        s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,start_x,end_x,lines)
+        s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,extended_start_x,extended_end_x,lines, x_limited, max_residual)
     
         testing_range = False
         # final extraction of lines and parameters after theshold and cut-off have been determined
