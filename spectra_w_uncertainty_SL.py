@@ -261,10 +261,8 @@ with open('simulation_history.csv') as f:
 # the following section of the code contains the components listed in the sidebar
 # mainly consist of number inputs and toggles to control the simulation
 with st.sidebar:
-    st.image(MS_logo, width=250)
-    # 'Total number of simulations: '+str(row_count/2)
-    st.text(f'Total # of simulations: {(row_count/2):.2e}')
-
+    st.image(MS_logo, width=250,caption=f'Total # of simulations: {(row_count/2):.2e}')
+    
     # basic simulation controls within a collapsable container
     with st.expander('Basic simulation controls',True):
         survey_mode = st.toggle("Survey mode", help='Simulate spectra over a broad wavenumber range without uncertainty quantification.', key='survey_mode')
