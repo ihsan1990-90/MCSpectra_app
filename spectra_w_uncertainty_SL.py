@@ -286,7 +286,7 @@ with st.sidebar:
         xaxis_end = st.number_input('x-axis max (cm-1)', step=1.0, value=1334.00, on_change=xaxis_validation, key='xaxis_end')
         conv_test = 1
         if conv_test == 1:
-            convergence_frequency = st.number_input('Cursor position for convergence test and PDF (cm-1)', step=1.0, min_value=float(min(st.session_state.wn_start,st.session_state.wn_end)), max_value=float(max(st.session_state.wn_start,st.session_state.wn_end)), value=float(min(st.session_state.wn_start,st.session_state.wn_end)), key='wn_conv')
+            convergence_frequency = st.number_input('Cursor position for convergence test and histogram (cm-1)', step=1.0, min_value=float(min(st.session_state.wn_start,st.session_state.wn_end)), max_value=float(max(st.session_state.wn_start,st.session_state.wn_end)), value=float(min(st.session_state.wn_start,st.session_state.wn_end)), key='wn_conv')
     
     # Advanced simulation controls
     with st.expander('Advanced simulation controls',True):
@@ -310,7 +310,7 @@ with st.sidebar:
     # warning and information messages are displayed below this subheader in the sidebar
     st.subheader('Warnings')
 
-tab1, tab2, tab3, tab4 = st.tabs(["Simulated spectra","Global statistics","Convergence","PDF"])
+tab1, tab2, tab3, tab4 = st.tabs(["Simulated spectra","Uncertainty spectrum","Convergence","Histogram"])
 
 # Constants
 h = 6.626070E-34  # Planck's constant (J.s)
@@ -1796,7 +1796,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
 
         if not(st.session_state.survey_mode):
             with tab1:
-                with st.spinner('Calculating and plotting global statistics ...'):
+                with st.spinner('Calculating and plotting Uncertainty spectrum ...'):
                     fig_2 = plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD, xaxis_start,xaxis_end,x_limited)
             with tab2:
                 st.write('_Relative uncertainty and skewness spectra:_')
@@ -1809,7 +1809,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
                     st.pyplot(fig_3)
 
             with tab1:
-                with st.spinner('Calculating and plotting PDF at ('+str(round(x_limited[std_index],2))+' cm-1)...'):
+                with st.spinner('Calculating and plotting histogram at ('+str(round(x_limited[std_index],2))+' cm-1)...'):
                     fig_4, std_index = uncertainty_PDF(convergence_frequency,spectra_limited,spectrum_mean_parameters,skewness,error_bars,x_limited)
             with tab4:
                 st.write('_Histogram of predicted absorbance at ('+str(round(x_limited[std_index],2))+' cm-1). Dashed line indicates predicted absorbance based on mean parameters:_')
