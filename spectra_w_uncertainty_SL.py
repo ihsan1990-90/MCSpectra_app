@@ -261,7 +261,7 @@ with open('simulation_history.csv') as f:
 # the following section of the code contains the components listed in the sidebar
 # mainly consist of number inputs and toggles to control the simulation
 with st.sidebar:
-    st.image(MS_logo, width=250,caption=f'Total # of simulations: {(row_count/2):.2e}')
+    st.image(MS_logo, width=250,caption=f'Total # of simulations: {(row_count):.2e}')
     
     # basic simulation controls within a collapsable container
     with st.expander('Basic simulation controls',True):
