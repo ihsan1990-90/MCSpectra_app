@@ -57,8 +57,8 @@ def wn_validation():
             wn_validation_flag = 1
             wn_change_flag = 1
     else:
-        if (wnstart >= wnend):
-            st.error('Wavelength upper limit should be larger than lower limit', icon="🚨")
+        if (wnstart >= wnend) or ((wnend - wnstart) > 500):
+            st.error('Wavelength upper limit should be (up to 500 cm-1) larger than lower limit', icon="🚨")
             wn_validation_flag = 0
             wn_change_flag = 0
         else:
@@ -93,6 +93,15 @@ def change_wn_range():
     elif st.session_state.selected_species == 'H2(16)O':
         st.session_state.wn_start = 3742
         st.session_state.wn_end = 3747
+    elif st.session_state.selected_species == 'H2O':
+        st.session_state.wn_start = 3742
+        st.session_state.wn_end = 3747
+    elif st.session_state.selected_species == 'HCl':
+        st.session_state.wn_start = 3106
+        st.session_state.wn_end = 3110
+    elif st.session_state.selected_species == 'HCN':
+        st.session_state.wn_start = 3350
+        st.session_state.wn_end = 3360
     elif st.session_state.selected_species == 'CO2':
         st.session_state.wn_start = 2300
         st.session_state.wn_end = 2305
@@ -103,6 +112,9 @@ def change_wn_range():
         st.session_state.wn_start = 2300
         st.session_state.wn_end = 2305
     elif st.session_state.selected_species == '(14)N2O':
+        st.session_state.wn_start = 1285
+        st.session_state.wn_end = 1290
+    elif st.session_state.selected_species == 'N2O':
         st.session_state.wn_start = 1285
         st.session_state.wn_end = 1290
     elif st.session_state.selected_species == 'NO':
@@ -117,6 +129,9 @@ def change_wn_range():
     elif st.session_state.selected_species == '(14)NH3':
         st.session_state.wn_start = 850
         st.session_state.wn_end = 856
+    elif st.session_state.selected_species == 'NH3':
+        st.session_state.wn_start = 850
+        st.session_state.wn_end = 856
     elif st.session_state.selected_species == '(12)C2H6':
         st.session_state.wn_start = 3009
         st.session_state.wn_end = 3012
@@ -129,6 +144,9 @@ def change_wn_range():
     elif st.session_state.selected_species == 'O3':
         st.session_state.wn_start = 1010    
         st.session_state.wn_end = 1015
+    elif st.session_state.selected_species == 'OH':
+        st.session_state.wn_start = 3300    
+        st.session_state.wn_end = 3310
     elif st.session_state.selected_species == 'HF':
         st.session_state.wn_start = 3876
         st.session_state.wn_end = 3879
@@ -156,7 +174,13 @@ def molar_mass():
     elif st.session_state.selected_species == 'CH4':
         M = 16.04 # Molar mass of CH4 (g/mol)        
     elif st.session_state.selected_species == 'H2(16)O':
-        M = 18 # Molar mass of CH4 (g/mol)  
+        M = 18 # Molar mass of CH4 (g/mol) 
+    elif st.session_state.selected_species == 'H2O':
+        M = 18.015 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'HCl':
+        M = 36.46 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'HCN':
+        M = 27.025 # Molar mass of CH4 (g/mol)           
     elif st.session_state.selected_species == 'CO2':
         M = 44.01 # Molar mass of CH4 (g/mol)     
     elif st.session_state.selected_species == '(12)CO2':
@@ -165,6 +189,8 @@ def molar_mass():
         M = 45 # Molar mass of CH4 (g/mol)        
     elif st.session_state.selected_species == '(14)N2O':
         M = 44 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'N2O':
+        M = 44.013 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'NO':
         M = 30.01 # Molar mass of CH4 (g/mol)       
     elif st.session_state.selected_species == '(12)CO':
@@ -173,12 +199,16 @@ def molar_mass():
         M = 28.01 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == '(14)NH3':
         M = 17 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'NH3':
+        M = 17.031 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == '(12)C2H6':
         M = 30 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'C2H6':
         M = 30 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'O3':
         M = 48 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'OH':
+        M = 17.008 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'HF':
         M = 20 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'CH3OH':
@@ -191,7 +221,7 @@ def molar_mass():
     return M
 
 # list of species for which species are available in the /HITRAN_data        
-species_options = ['CH4', '(12)CH4', 'H2(16)O', 'CO2', '(12)CO2', '(13)CO2', '(14)N2O', 'NO','(12)CO','CO','(14)NH3','(12)C2H6','C2H6','O3','HF','CH3OH','SO2','NO2']
+species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H6','(12)C2H6','CH3OH','H2O', 'H2(16)O','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
 
 # pre-programmed list of broadeners for different species
 # also indicates whether self-shift parameter data is available 
@@ -208,6 +238,9 @@ elif st.session_state.selected_species == '(12)CH4':
 elif st.session_state.selected_species == 'H2(16)O':
     broadener_options = ['Air']
     self_shift_available = False
+elif st.session_state.selected_species == 'H2O':
+    broadener_options = ['Air']
+    self_shift_available = False
 elif st.session_state.selected_species == 'CO2':
     broadener_options = ['Air','H2','He','H2O']
     self_shift_available = True
@@ -220,6 +253,9 @@ elif st.session_state.selected_species == '(13)CO2':
 elif st.session_state.selected_species == '(14)N2O':
     broadener_options = ['Air','He','H2O']
     self_shift_available = True
+elif st.session_state.selected_species == 'N2O':
+    broadener_options = ['Air','He','H2O']
+    self_shift_available = False
 elif st.session_state.selected_species == 'NO':
     broadener_options = ['Air']
     self_shift_available = False
@@ -232,6 +268,9 @@ elif st.session_state.selected_species == 'CO':
 elif st.session_state.selected_species == '(14)NH3':
     broadener_options = ['Air','H2','He','CO2','H2O']
     self_shift_available = False
+elif st.session_state.selected_species == 'NH3':
+    broadener_options = ['Air','H2','He','CO2','H2O']
+    self_shift_available = False
 elif st.session_state.selected_species == '(12)C2H6':
     broadener_options = ['Air']
     self_shift_available = False
@@ -241,7 +280,16 @@ elif st.session_state.selected_species == 'C2H6':
 elif st.session_state.selected_species == 'O3':
     broadener_options = ['Air']
     self_shift_available = False
+elif st.session_state.selected_species == 'OH':
+    broadener_options = ['Air','H2','He']
+    self_shift_available = False
 elif st.session_state.selected_species == 'HF':
+    broadener_options = ['Air','H2','He']
+    self_shift_available = False
+elif st.session_state.selected_species == 'HCl':
+    broadener_options = ['Air','H2','He','CO2']
+    self_shift_available = False
+elif st.session_state.selected_species == 'HCN':
     broadener_options = ['Air','H2','He']
     self_shift_available = False
 elif st.session_state.selected_species == 'CH3OH':
@@ -369,6 +417,14 @@ def import_data(selected_species):
         first_isotopologue = 0
         isotopologue_abundance = 0.997317
         rotational_constant = 9.28 #cm-1
+    elif selected_species == 'H2O':
+        selected_species_lines = pd.read_csv('HITRAN_data/H2O_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_H2O_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 1
+        isotopologue_abundance = 1
+        rotational_constant = 9.28 #cm-1
     elif selected_species == 'CO2':
         selected_species_lines = pd.read_csv('HITRAN_data/CO2_natural_lines_formatted.csv').values
         #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
@@ -397,6 +453,14 @@ def import_data(selected_species):
         num_of_isotopologues = 1
         first_isotopologue = 0
         isotopologue_abundance = 0.990333
+        rotational_constant = 0.42 #cm-1
+    elif selected_species == 'N2O':
+        selected_species_lines = pd.read_csv('HITRAN_data/N2O_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_N2O_natural.csv', delimiter=',')
+        num_of_isotopologues = 4
+        first_isotopologue = 21
+        isotopologue_abundance = 1
         rotational_constant = 0.42 #cm-1
     elif selected_species == 'NO':
         selected_species_lines = pd.read_csv('HITRAN_data/NO_natural_lines_formatted.csv').values
@@ -427,6 +491,14 @@ def import_data(selected_species):
         first_isotopologue = 0
         isotopologue_abundance = 0.995872
         rotational_constant = 9.93 #cm-1
+    elif selected_species == 'NH3':
+        selected_species_lines = pd.read_csv('HITRAN_data/NH3_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_NH3_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 45
+        isotopologue_abundance = 1
+        rotational_constant = 9.93 #cm-1
     elif selected_species == '(12)C2H6':
         selected_species_lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
@@ -449,6 +521,14 @@ def import_data(selected_species):
         first_isotopologue = 16
         isotopologue_abundance = 1
         rotational_constant = 0.45 #cm-1
+    elif selected_species == 'OH':
+        selected_species_lines = pd.read_csv('HITRAN_data/OH_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_OH_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 48
+        isotopologue_abundance = 1
+        rotational_constant = 18.91 #cm-1
     elif selected_species == 'HF':
         selected_species_lines = pd.read_csv('HITRAN_data/HF_natural_lines_formatted.csv').values
         tips = np.genfromtxt('HITRAN_data/q_HF_natural.csv', delimiter=',')
@@ -456,6 +536,20 @@ def import_data(selected_species):
         first_isotopologue = 0
         isotopologue_abundance = 1
         rotational_constant = 20.96 #cm-1
+    elif selected_species == 'HCl':
+        selected_species_lines = pd.read_csv('HITRAN_data/HCl_natural_lines_formatted.csv').values
+        tips = np.genfromtxt('HITRAN_data/q_HCl_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 52
+        isotopologue_abundance = 1
+        rotational_constant = 10.44 #cm-1
+    elif selected_species == 'HCN':
+        selected_species_lines = pd.read_csv('HITRAN_data/HCN_natural_lines_formatted.csv').values
+        tips = np.genfromtxt('HITRAN_data/q_HCN_natural.csv', delimiter=',')
+        num_of_isotopologues = 3
+        first_isotopologue = 70
+        isotopologue_abundance = 1
+        rotational_constant = 1.478 #cm-1
     elif selected_species == 'CH3OH':
         selected_species_lines = pd.read_csv('HITRAN_data/CH3OH_natural_lines_formatted.csv').values
         tips = np.genfromtxt('HITRAN_data/q_CH3OH_natural.csv', delimiter=',')
@@ -666,6 +760,8 @@ def extract_lines(start_x,end_x,selected_species_lines,s0_min,selected_broadener
                     line.append(1E-6)
                 elif uncertainty == 8:
                     line.append(1E-7)
+                elif uncertainty == 9:
+                    line.append(1E-8)
             # the following 'for' statement extract uncertainty in line strength
             for k in [2]:
                 uncertainty = selected_species_lines[i, 22 + k]
@@ -835,7 +931,11 @@ def extract_lines(start_x,end_x,selected_species_lines,s0_min,selected_broadener
                 elif uncertainty == 6:
                     line.append(1E-5)
                 elif uncertainty == 7:
-                    line.append(1E-5)
+                    line.append(1E-6)
+                elif uncertainty == 8:
+                    line.append(1E-7)
+                elif uncertainty == 9:
+                    line.append(1E-8)
             
             # the following 'for' statement extract uncertainty in pressure shift due absorbing/emitting species
             if not(self_shift_available):
@@ -876,7 +976,11 @@ def extract_lines(start_x,end_x,selected_species_lines,s0_min,selected_broadener
                     elif uncertainty == 6:
                         line.append(1E-5)
                     elif uncertainty == 7:
-                        line.append(1E-5)
+                        line.append(1E-6)
+                    elif uncertainty == 8:
+                        line.append(1E-7)
+                    elif uncertainty == 9:
+                        line.append(1E-8)
 
             #isotopologue ID
             line.append(selected_species_lines[i, 45])
@@ -1480,7 +1584,7 @@ def find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, 
             # loop to satisfy the risidual requirement
             while residual > max_residual:
                 # decrease line strength threshold by a factor of 10
-                s0_min = s0_min/2#/10
+                s0_min = s0_min/10
                 # repeat line extraction
                 lines = extract_lines(extended_start_x,extended_end_x,selected_species_lines,s0_min, selected_broadener, testing_range,isotopologue_abundance)
                 # repeat parameter extraction
