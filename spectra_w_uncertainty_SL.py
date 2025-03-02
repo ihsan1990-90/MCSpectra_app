@@ -96,6 +96,9 @@ def change_wn_range():
     elif st.session_state.selected_species == 'H2O':
         st.session_state.wn_start = 3742
         st.session_state.wn_end = 3747
+    elif st.session_state.selected_species == 'H2O2':
+        st.session_state.wn_start = 1200
+        st.session_state.wn_end = 1210
     elif st.session_state.selected_species == 'HCl':
         st.session_state.wn_start = 3106
         st.session_state.wn_end = 3110
@@ -126,6 +129,9 @@ def change_wn_range():
     elif st.session_state.selected_species == 'CO':
         st.session_state.wn_start = 2000
         st.session_state.wn_end = 2010
+    elif st.session_state.selected_species == 'CS2':
+        st.session_state.wn_start = 1500
+        st.session_state.wn_end = 1510
     elif st.session_state.selected_species == '(14)NH3':
         st.session_state.wn_start = 850
         st.session_state.wn_end = 856
@@ -138,6 +144,9 @@ def change_wn_range():
     elif st.session_state.selected_species == 'C2H6':
         st.session_state.wn_start = 3009
         st.session_state.wn_end = 3012
+    elif st.session_state.selected_species == 'C2H2':
+        st.session_state.wn_start = 700
+        st.session_state.wn_end = 710
     elif st.session_state.selected_species == 'CH3OH':
         st.session_state.wn_start = 1030
         st.session_state.wn_end = 1035
@@ -177,6 +186,8 @@ def molar_mass():
         M = 18 # Molar mass of CH4 (g/mol) 
     elif st.session_state.selected_species == 'H2O':
         M = 18.015 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'H2O2':
+        M = 34.015 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'HCl':
         M = 36.46 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'HCN':
@@ -186,7 +197,9 @@ def molar_mass():
     elif st.session_state.selected_species == '(12)CO2':
         M = 44 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == '(13)CO2':
-        M = 45 # Molar mass of CH4 (g/mol)        
+        M = 45 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'CS2':
+        M = 76.13 # Molar mass of CH4 (g/mol)             
     elif st.session_state.selected_species == '(14)N2O':
         M = 44 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'N2O':
@@ -205,6 +218,8 @@ def molar_mass():
         M = 30 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'C2H6':
         M = 30 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'C2H2':
+        M = 26.038 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'O3':
         M = 48 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'OH':
@@ -221,7 +236,7 @@ def molar_mass():
     return M
 
 # list of species for which species are available in the /HITRAN_data        
-species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H6','(12)C2H6','CH3OH','H2O', 'H2(16)O','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
+species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H6','(12)C2H6','CH3OH','CS2','H2O', 'H2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
 
 # pre-programmed list of broadeners for different species
 # also indicates whether self-shift parameter data is available 
@@ -239,6 +254,9 @@ elif st.session_state.selected_species == 'H2(16)O':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == 'H2O':
+    broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == 'H2O2':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == 'CO2':
@@ -265,6 +283,9 @@ elif st.session_state.selected_species == '(12)CO':
 elif st.session_state.selected_species == 'CO':
     broadener_options = ['Air','H2','He','CO2','H2O']
     self_shift_available = True
+elif st.session_state.selected_species == 'CS2':
+    broadener_options = ['Air']
+    self_shift_available = False
 elif st.session_state.selected_species == '(14)NH3':
     broadener_options = ['Air','H2','He','CO2','H2O']
     self_shift_available = False
@@ -275,6 +296,9 @@ elif st.session_state.selected_species == '(12)C2H6':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == 'C2H6':
+    broadener_options = ['Air','H2','He','CO2']
+    self_shift_available = False
+elif st.session_state.selected_species == 'C2H2':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == 'O3':
@@ -425,6 +449,14 @@ def import_data(selected_species):
         first_isotopologue = 1
         isotopologue_abundance = 1
         rotational_constant = 9.28 #cm-1
+    elif selected_species == 'H2O2':
+        selected_species_lines = pd.read_csv('HITRAN_data/H2O2_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_H2O2_natural.csv', delimiter=',')
+        num_of_isotopologues = 1
+        first_isotopologue = 75
+        isotopologue_abundance = 1
+        rotational_constant = 0.874 #cm-1
     elif selected_species == 'CO2':
         selected_species_lines = pd.read_csv('HITRAN_data/CO2_natural_lines_formatted.csv').values
         #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
@@ -433,6 +465,14 @@ def import_data(selected_species):
         first_isotopologue = 7
         isotopologue_abundance = 1
         rotational_constant = 0.39 #cm-1
+    elif selected_species == 'CS2':
+        selected_species_lines = pd.read_csv('HITRAN_data/CS2_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_CS2_natural.csv', delimiter=',')
+        num_of_isotopologues = 4
+        first_isotopologue = 131
+        isotopologue_abundance = 1
+        rotational_constant = 0.109 #cm-1
     elif selected_species == '(12)CO2':
         selected_species_lines = pd.read_csv('HITRAN_data/12CO2_lines_formatted.csv').values
         tips = pd.read_csv('HITRAN_data/q7_12CO2.csv', sep='\s+').values
@@ -513,6 +553,14 @@ def import_data(selected_species):
         first_isotopologue = 0
         isotopologue_abundance = 1
         rotational_constant = 2.86 #cm-1
+    elif selected_species == 'C2H2':
+        selected_species_lines = pd.read_csv('HITRAN_data/C2H2_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_C2H2_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 76
+        isotopologue_abundance = 1
+        rotational_constant = 1.1638 #cm-1
     elif selected_species == 'O3':
         selected_species_lines = pd.read_csv('HITRAN_data/O3_natural_lines_formatted.csv').values
         #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
