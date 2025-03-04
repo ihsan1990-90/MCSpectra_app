@@ -22,7 +22,7 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://www.kaust.edu.sa',
         'Report a bug': "mailto:ihsan.farouki@kaust.edu.sa",
-        'About': "# Absorbance and emission spectra simulations with uncertainty quantification"
+        'About': "# MCSpectra (v1.0): Absorbance and emission spectra simulations with uncertainty quantification"
     }
 )
 
@@ -96,6 +96,12 @@ def change_wn_range():
     elif st.session_state.selected_species == 'H2O':
         st.session_state.wn_start = 3742
         st.session_state.wn_end = 3747
+    elif st.session_state.selected_species == 'H2S':
+        st.session_state.wn_start = 3800
+        st.session_state.wn_end = 3810
+    elif st.session_state.selected_species == 'H2CO':
+        st.session_state.wn_start = 1750
+        st.session_state.wn_end = 1760
     elif st.session_state.selected_species == 'H2O2':
         st.session_state.wn_start = 1200
         st.session_state.wn_end = 1210
@@ -147,6 +153,9 @@ def change_wn_range():
     elif st.session_state.selected_species == 'C2H2':
         st.session_state.wn_start = 700
         st.session_state.wn_end = 710
+    elif st.session_state.selected_species == 'C2H4':
+        st.session_state.wn_start = 906
+        st.session_state.wn_end = 910
     elif st.session_state.selected_species == 'CH3OH':
         st.session_state.wn_start = 1030
         st.session_state.wn_end = 1035
@@ -186,6 +195,10 @@ def molar_mass():
         M = 18 # Molar mass of CH4 (g/mol) 
     elif st.session_state.selected_species == 'H2O':
         M = 18.015 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'H2S':
+        M = 34.082 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'H2CO':
+        M = 30.031 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'H2O2':
         M = 34.015 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'HCl':
@@ -220,6 +233,8 @@ def molar_mass():
         M = 30 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'C2H2':
         M = 26.038 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'C2H4':
+        M = 28.05 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'O3':
         M = 48 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'OH':
@@ -236,7 +251,7 @@ def molar_mass():
     return M
 
 # list of species for which species are available in the /HITRAN_data        
-species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H6','(12)C2H6','CH3OH','CS2','H2O', 'H2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
+species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H4','C2H6','(12)C2H6','CH3OH','CS2','H2O','H2CO' ,'H2S', 'H2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
 
 # pre-programmed list of broadeners for different species
 # also indicates whether self-shift parameter data is available 
@@ -255,6 +270,12 @@ elif st.session_state.selected_species == 'H2(16)O':
     self_shift_available = False
 elif st.session_state.selected_species == 'H2O':
     broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == 'H2S':
+    broadener_options = ['Air','H2','He','H2O']
+    self_shift_available = False
+elif st.session_state.selected_species == 'H2CO':
+    broadener_options = ['Air','H2','He','CO2']
     self_shift_available = False
 elif st.session_state.selected_species == 'H2O2':
     broadener_options = ['Air']
@@ -299,6 +320,9 @@ elif st.session_state.selected_species == 'C2H6':
     broadener_options = ['Air','H2','He','CO2']
     self_shift_available = False
 elif st.session_state.selected_species == 'C2H2':
+    broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == 'C2H4':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == 'O3':
@@ -365,7 +389,7 @@ with st.sidebar:
         # number of MC spectra instances adjustable only when not in survey mode 
         if not(st.session_state.survey_mode):
             N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
-        max_residual = st.number_input("Max. allowed risidual due to frequency cut-off or line-strength threshold", help='Risidual calculated as a fraction of the maximum absorbance/emission within the selected wavenumber range.', min_value=1E-4, max_value=1E-2, value=1E-2, format="%.3e")
+        max_residual = st.number_input("Max. allowed risidual due to frequency cut-off or line-strength threshold", help='Risidual calculated as a fraction of the maximum absorbance/emission within the selected wavenumber range.', min_value=1E-4, max_value=2E-2, value=1E-2, format="%.3e")
         manual_control = st.toggle("Enable manual control of line parameters",key='manual_control')
         calc_method_wofz = st.toggle("More accurate evaluation of the Voigt function",key='calc_method_wofz')
         # manually adjusting line parameters is possible only when not in survey mode 
@@ -449,6 +473,22 @@ def import_data(selected_species):
         first_isotopologue = 1
         isotopologue_abundance = 1
         rotational_constant = 9.28 #cm-1
+    elif selected_species == 'H2S':
+        selected_species_lines = pd.read_csv('HITRAN_data/H2S_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_H2S_natural.csv', delimiter=',')
+        num_of_isotopologues = 3
+        first_isotopologue = 81
+        isotopologue_abundance = 1
+        rotational_constant = 9.035 #cm-1
+    elif selected_species == 'H2CO':
+        selected_species_lines = pd.read_csv('HITRAN_data/H2CO_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_H2CO_natural.csv', delimiter=',')
+        num_of_isotopologues = 3
+        first_isotopologue = 64
+        isotopologue_abundance = 1
+        rotational_constant = 1.295 #cm-1
     elif selected_species == 'H2O2':
         selected_species_lines = pd.read_csv('HITRAN_data/H2O2_natural_lines_formatted.csv').values
         #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
@@ -561,6 +601,14 @@ def import_data(selected_species):
         first_isotopologue = 76
         isotopologue_abundance = 1
         rotational_constant = 1.1638 #cm-1
+    elif selected_species == 'C2H4':
+        selected_species_lines = pd.read_csv('HITRAN_data/C2H4_natural_lines_formatted.csv').values
+        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+        tips = np.genfromtxt('HITRAN_data/q_C2H4_natural.csv', delimiter=',')
+        num_of_isotopologues = 2
+        first_isotopologue = 90
+        isotopologue_abundance = 1
+        rotational_constant = 1.0012 #cm-1
     elif selected_species == 'O3':
         selected_species_lines = pd.read_csv('HITRAN_data/O3_natural_lines_formatted.csv').values
         #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
@@ -1352,6 +1400,7 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simula
                 tips_index = line[15]-first_isotopologue
         else:
             tips_index = 0
+            
         
         # line position / including pressure shift
         x0_shifted = x0[j] + P * ((1 - mole_fraction) * delta_air[j] + mole_fraction * delta_self[j])
@@ -1746,7 +1795,8 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
     else:
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
         s0_min, lines, spectrum_mean_parameters = find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,extended_start_x,extended_end_x,lines, x_limited, max_residual)
-    
+        
+
         testing_range = False
         # final extraction of lines and parameters after theshold and cut-off have been determined
         x = np.arange(wnstart - wn_cutoff, wnend + wn_cutoff, wnres)
