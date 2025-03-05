@@ -1824,7 +1824,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         2: st.column_config.NumberColumn(
             "S0",
             help="Line strength at 296 K (cm-1/molec.cm-2)",
-            min_value=1.000e-25,
+            min_value=0.000e-25,
             max_value=1.000e+1,
             #step=1.000e-25,
             format="%.4e",
