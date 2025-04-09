@@ -360,7 +360,7 @@ with st.sidebar:
     st.image(MS_logo, width=250,caption=f'Total # of simulations: {(row_count):.2e}')
     
     # basic simulation controls within a collapsable container
-    with st.expander('Basic simulation controls',True):
+    with st.expander('Basic simulation controls', False):
         survey_mode = st.toggle("Survey mode", help='Simulate spectra over a broad wavenumber range without uncertainty quantification.', key='survey_mode')
         simulation_type = st.selectbox("Spectrum type", ['Absorbance', 'Transmittance','Emission'], 0,key='simulation_type')
         selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
@@ -375,7 +375,7 @@ with st.sidebar:
     # plotting controls
     # useful for zooming in and out on the x-axis
     # also to select the wavenumber at which the standard deviation convergence is tested
-    with st.expander('Plotting controls',True):
+    with st.expander('Plotting controls', False):
         if 'xaxis_end' not in st.session_state:
             st.session_state.xaxis_end = wnend
         xaxis_start = st.number_input('x-axis min (cm-1)', help="Use x-axis min and max to zoom into portions of simulated spectra without having to rerun the simulations." , step=1.0, value=1331.00, on_change=xaxis_validation, key='xaxis_start')
@@ -385,7 +385,7 @@ with st.sidebar:
             convergence_frequency = st.number_input('Cursor position for convergence test and histogram (cm-1)', step=1.0, min_value=float(min(st.session_state.wn_start,st.session_state.wn_end)), max_value=float(max(st.session_state.wn_start,st.session_state.wn_end)), value=float(min(st.session_state.wn_start,st.session_state.wn_end)), key='wn_conv')
     
     # Advanced simulation controls
-    with st.expander('Advanced simulation controls',True):
+    with st.expander('Advanced simulation controls', False):
         # number of MC spectra instances adjustable only when not in survey mode 
         if not(st.session_state.survey_mode):
             N_simulations = st.number_input('Number of simulations', min_value=1, max_value=2000, step=100, value=1000)
