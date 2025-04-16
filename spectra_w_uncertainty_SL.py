@@ -440,7 +440,7 @@ if st.session_state.exp_unc:
 
 
 # import HITRAN and TIPS (total internal partition sums) data for the selected species
-@st.cache_resource(show_spinner=True,max_entries=1)
+#@st.cache_resource(show_spinner=True,max_entries=1)
 def import_data(selected_species):
     # print('importing data')
 
@@ -685,7 +685,7 @@ def plank_emission(x,T):
 
 # start and end indices for the lines going into the calculation
 # find the index range over which the lines of interest exist in the imported data
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def find_range(x,selected_species_lines):
     #print('finding start and end indices')
     #start_x = np.where(np.round(selected_species_lines[:, 0],0) == np.round(min(x),0))[0][0]
@@ -704,7 +704,7 @@ def find_range(x,selected_species_lines):
     return start_x, end_x
 
 # Extract the line parameters and their uncertainties for lines within the range
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def extract_lines(start_x,end_x,selected_species_lines,s0_min,selected_broadener, testing_range,isotopologue_abundance):
     #print('extracting lines')
     flags_array = np.zeros(23)
@@ -1100,7 +1100,7 @@ def extract_lines(start_x,end_x,selected_species_lines,s0_min,selected_broadener
 # extract parameter values and uncertainties from the 'lines' array generated in 'extract_lines()' in preparation for spectra calculations
 # The function also used to generate distributions for each line parameter in an earlier version
 # lines which are not needed in the new implementation are commented out
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def extract_parameters(lines):
     print('extracting parameters and generating distributions')
     #x0_rand_cdf = np.zeros((len(lines),num_of_PDF_points))
@@ -1182,7 +1182,7 @@ def extract_parameters(lines):
 
 # extract parameter values only without uncertainties from the 'lines' array generated in 'extract_lines()'
 # has additional measures needed for the cut-off frequency determination (visible start and visible end)
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def extract_mean_parameters(lines):
     print('extracting mean parameters')
 
@@ -1252,7 +1252,7 @@ def exp_unc_uncertainties(mole_fraction, pathlength, pressure, temperature,exp_u
     return mole_fraction_sigma, pathlength_sigma,pressure_sigma,temperature_sigma
 
 # 'MC_simulation()' is the core function which performs the random sampling and calls the line shape calculation function
-@st.cache_resource(show_spinner=False)
+#@st.cache_resource(show_spinner=False)
 def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_method_wofz,simulation_type,num_of_isotopologues, first_isotopologue,x_limited,tips,mole_fraction_sigma, pathlength_sigma,pressure_sigma,temperature_sigma,x0_sigma, s0_sigma, gamma_air_sigma,gamma_self_sigma, n_air_sigma, delta_self_sigma,delta_air_sigma, x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self):
     # Run the simulations
     #t_1 = time.time()
@@ -1390,7 +1390,7 @@ def MC_simulation(lines,n_simulations,T,P,mole_fraction,L,x,exp_unc_values,calc_
     return spectra_1
 
 # Calculate spectrum based on mean parameters
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x0, s0, gamma_air_0, gamma_self_0, n_air, delta_air, delta_self):
     spectrum_mean_parameters = np.zeros(len(x))
     j = 0
@@ -1437,7 +1437,7 @@ def mean_spectrum_simulation(lines,T,P,mole_fraction,L,x,calc_method_wofz,simula
 
 # Calculate relative standard deviation, skewness and percentile based coeffecient of variation
 # Percentiles are not presented in the interface of MCSpectra
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def calc_error_bars(spectra,spectrum_mean_parameters,x_limited):
     error_bars = np.zeros(len(x_limited))
     relative_uncertainty = np.zeros(len(x_limited))
@@ -1485,7 +1485,7 @@ def std_deviation_with_iterations(spectra,spectrum_mean_parameters,x_limited):
     return fig_3, std_index
     
 # calculate and plot distribution of results at wn_conv
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def uncertainty_PDF(convergence_frequency,spectra,spectrum_mean_parameters,skewness,error_bars,x_limited):
     
     # find the index at which the selected wavenumber position exists
@@ -1521,7 +1521,7 @@ def uncertainty_PDF(convergence_frequency,spectra,spectrum_mean_parameters,skewn
     return fig_4, std_index
 
 # function which plots the figure which shows the absorbance/emission spectrum along with confidence interval
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def plot_MC_spectra(spectra, spectrum_mean_parameters, P90, P10, xaxis_start,xaxis_end,x_limited):
     fig_1, ax = plt.subplots()
     #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
@@ -1619,7 +1619,7 @@ def plot_mean_spectrum(spectrum_mean_parameters, xaxis_start,xaxis_end,x_limited
     return fig_1
 
 # relative uncertainty and skewness plots
-@st.cache_resource(show_spinner=False,max_entries=1)
+#@st.cache_resource(show_spinner=False,max_entries=1)
 def plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD, xaxis_start,xaxis_end,x_limited):
     fig_2, ax1 = plt.subplots()
 
@@ -1660,11 +1660,11 @@ def plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD, xaxis_start,xaxis
 
 # The following function updates 'dek' (key of manual parameter control table) when the (species, wavenumber range, temperature ... etc) are changed by the user 
 # updating the key results in repopulating the table using HITRAN data
-@st.cache_resource(show_spinner=False)
+#@st.cache_resource(show_spinner=False)
 def update_manual_control(lines):
     st.session_state.dek = str(uuid.uuid4()) # refresh key to reset lines
 
-@st.cache_resource(show_spinner=False)
+#@st.cache_resource(show_spinner=False)
 def find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, x, selected_species_lines,isotopologue_abundance,num_of_isotopologues,calc_method_wofz,simulation_type,first_isotopologue,tips,extended_start_x,extended_end_x,lines, x_limited, max_residual):
     # extract lines of interest from imported data
     testing_range = True
@@ -1706,7 +1706,7 @@ def find_line_strength_thresh(s0_min, selected_broadener, T,P,mole_fraction, L, 
 
     return s0_min, lines, spectrum_mean_parameters
 
-@st.cache_resource(show_spinner=False)
+#@st.cache_resource(show_spinner=False)
 def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selected_species_lines,s0_min, selected_broadener,isotopologue_abundance,T,P,mole_fraction,L,calc_method_wofz,simulation_type,num_of_isotopologues,first_isotopologue,tips,x_limited):
     # evaluate line spacing for frequency cut-off calculations
     testing_range = True
