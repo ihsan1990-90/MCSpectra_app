@@ -1994,6 +1994,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
                 st.write('_'+simulation_type+' spectrum based on mean line-parameters of '+str(number_of_lines) + ' lines\n:_')
                         
             st.pyplot(fig_1)
+            plt.close(fig_1)
 
 
         if not(st.session_state.survey_mode):
@@ -2002,13 +2003,15 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
                     fig_2 = plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD, xaxis_start,xaxis_end,x_limited)
             with tab2:
                 st.write('_Relative uncertainty and skewness spectra:_')
-                st.pyplot(fig_2)    
+                st.pyplot(fig_2)
+                plt.close(fig_2)    
 
             if conv_test == 1:
                 fig_3, std_index = std_deviation_with_iterations(spectra_limited,spectrum_mean_parameters,x_limited)
                 with tab3:
                     st.write('_Standard deviation with iterations at ('+str(round(x_limited[std_index],2))+' cm-1):_')
                     st.pyplot(fig_3)
+                    plt.close(fig_3)
 
             with tab1:
                 with st.spinner('Calculating and plotting histogram at ('+str(round(x_limited[std_index],2))+' cm-1)...'):
@@ -2016,6 +2019,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
             with tab4:
                 st.write('_Histogram of predicted absorbance at ('+str(round(x_limited[std_index],2))+' cm-1). Dashed line indicates predicted absorbance based on mean parameters:_')
                 st.pyplot(fig_4)
+                plt.close(fig_4)
         else:
             with tab2:
                 st.write('_Disable survey mode for uncertainty quantification._')
