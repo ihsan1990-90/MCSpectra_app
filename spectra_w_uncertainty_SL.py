@@ -11,6 +11,7 @@ import uuid
 import datetime
 import csv
 import time
+import gc
 import math
 
 # General page configuration
@@ -2063,6 +2064,8 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
                         file_name = textstr+'.csv',
                         mime='text/csv'
                     )
+    del selected_species_lines, lines, spectra_limited
+    gc.collect()
 
 wn_validation_flag, wn_change_flag = wn_validation()
 # run main() function if simulation parameters are valid
