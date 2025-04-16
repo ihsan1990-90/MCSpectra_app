@@ -12,6 +12,7 @@ import datetime
 import csv
 import time
 import gc
+import sys
 import math
 
 # General page configuration
@@ -2064,8 +2065,6 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
                         file_name = textstr+'.csv',
                         mime='text/csv'
                     )
-    del selected_species_lines, lines, spectra_limited
-    gc.collect()
 
 wn_validation_flag, wn_change_flag = wn_validation()
 # run main() function if simulation parameters are valid
@@ -2093,3 +2092,9 @@ st.markdown(
     ),
     unsafe_allow_html=True,
 )
+
+for name in list(globals().keys()):
+    if not name.startswith("__") and name not in ['st', 'gc', 'sys']:
+        del globals()[name]
+#del selected_species_lines, lines, spectra_limited
+gc.collect()
