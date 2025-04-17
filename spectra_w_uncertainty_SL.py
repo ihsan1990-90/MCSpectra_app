@@ -2093,8 +2093,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-for name in list(globals().keys()):
-    if not name.startswith("__") and name not in ['st', 'gc', 'sys']:
-        del globals()[name]
+#for name in list(globals().keys()):
+#    if not name.startswith("__") and name not in ['st', 'gc', 'sys']:
+#        del globals()[name]
 #del selected_species_lines, lines, spectra_limited
-gc.collect()
+#gc.collect()
