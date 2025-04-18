@@ -417,7 +417,7 @@ c = 2.99792458E+10  # Speed of light (cm/s)
 R = 1.36259479E-22  # Gas constant (cm^3.atm.K^-1.molecule^-1)
 
 # Adjust the range such that it is an integer multiple of the resolution
-wnend = wnend - (wnend-wnstart)%wnres
+wnend = wnstart + np.round(((wnend - wnstart)/wnres),0)*wnres
 
 # %% Initial parameters (replace MATLAB's "clear")
 if st.session_state.survey_mode:
