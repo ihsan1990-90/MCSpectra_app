@@ -416,6 +416,9 @@ kb = 1.380649E-23  # Boltzmann constant (J/K)
 c = 2.99792458E+10  # Speed of light (cm/s)
 R = 1.36259479E-22  # Gas constant (cm^3.atm.K^-1.molecule^-1)
 
+# Adjust the range such that it is an integer multiple of the resolution
+wnend = wnend - (wnend-wnstart)%wnres
+
 # %% Initial parameters (replace MATLAB's "clear")
 if st.session_state.survey_mode:
     N_simulations = 1
@@ -1551,8 +1554,8 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters, P90, P10, xaxis_start,xax
     # adjust a-axis zoom based on the choice of the user
     ax.set_xlim(xaxis_start,xaxis_end)
     #round(time.time() - t,2)
-    temp_index_start = np.where(np.round(x_limited,4) == xaxis_start)[0]
-    temp_index_end = np.where(np.round(x_limited,4) == xaxis_end-wnres)[0]
+    temp_index_start = np.where(np.round(x_limited,2) == np.round(xaxis_start,2))[0]
+    temp_index_end = np.where(np.round(x_limited,2) == np.round(xaxis_end-wnres,2))[0]
 
     # scale -y-axis automatically
     if simulation_type == 'Transmittance':
@@ -1600,8 +1603,8 @@ def plot_mean_spectrum(spectrum_mean_parameters, xaxis_start,xaxis_end,x_limited
     
     ax.set_xlim(xaxis_start,xaxis_end)
 
-    temp_index_start = np.where(np.round(x_limited,4) == xaxis_start)[0]
-    temp_index_end = np.where(np.round(x_limited,4) == xaxis_end-wnres)[0]
+    temp_index_start = np.where(np.round(x_limited,2) == np.round(xaxis_start,2))[0]
+    temp_index_end = np.where(np.round(x_limited,2) == np.round(xaxis_end-wnres,2))[0]
     
     if simulation_type == 'Transmittance':
         ax.set_ylim(0,1)
