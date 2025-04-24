@@ -52,7 +52,7 @@ def wn_validation():
     if not(st.session_state.survey_mode):
         # wnstart and wnend are the start and end wavenumber range as selected by the user
         if (wnstart >= wnend) or ((wnend - wnstart) > 10):
-            st.error('Wavelength upper limit should be (up to 10 cm-1) larger than lower limit', icon="🚨")
+            st.error('Wavenumbers upper limit should be (up to 10 cm-1) larger than lower limit', icon="🚨")
             wn_validation_flag = 0
             wn_change_flag = 0
         else:
@@ -60,7 +60,7 @@ def wn_validation():
             wn_change_flag = 1
     else:
         if (wnstart >= wnend) or ((wnend - wnstart) > 500):
-            st.error('Wavelength upper limit should be (up to 500 cm-1) larger than lower limit', icon="🚨")
+            st.error('Wavenumbers upper limit should be (up to 500 cm-1) larger than lower limit', icon="🚨")
             wn_validation_flag = 0
             wn_change_flag = 0
         else:
@@ -371,8 +371,8 @@ with st.sidebar:
         pressure = st.number_input("Pressure (atm)", min_value=0.001, max_value=100.00, value=1.00, step=0.2)
         molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
         pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=50000, step=1, value=10)
-        wnstart = st.number_input('Wavelength start (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1331.00, on_change=change_xaxis_range, key='wn_start')
-        wnend = st.number_input('Wavelength end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, on_change=change_xaxis_range, key='wn_end')
+        wnstart = st.number_input('Wavenumbers start (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1331.00, on_change=change_xaxis_range, key='wn_start')
+        wnend = st.number_input('Wavenumbers end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, on_change=change_xaxis_range, key='wn_end')
         wnres = st.number_input('Resolution (cm-1)', min_value=0.001, max_value=0.1, step=0.001, value=0.005, key='wn_res', format="%.3f")
     # plotting controls
     # useful for zooming in and out on the x-axis
@@ -1563,7 +1563,7 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters, P90, P10, xaxis_start,xax
     else:
         ax.set_ylim(0,1.1*type_scale*spectra[temp_index_start[0]:temp_index_end[0]].max())#np.round(scaling_factor*spectra.max())/scaling_factor)
 
-    ax.legend(['Mean parameters', 'Unceratinty envelope'])
+    ax.legend(['Mean parameters', 'Uncertainty envelope'])
 
     textstr = (str(100*mole_fraction)+'% ' + selected_species + '\n' + str(T) + ' K\n' + str(P) + ' atm\n'+ str(L) + ' cm\n' + 'Bath-gas: '+ selected_broadener +'\n' + '# of simulations: ' + str(n_simulations))
     props = dict(boxstyle='round', facecolor="#A87BF9", alpha=0)
@@ -1876,7 +1876,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         ),
         8: st.column_config.NumberColumn(
             "± v0",
-            help="Unceratinty in line position (cm-1)",
+            help="Uncertainty in line position (cm-1)",
             min_value=1E-6,
             max_value=1,
             step=1E-6,
@@ -1884,7 +1884,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         ),
         9: st.column_config.NumberColumn(
             "± S0",
-            help="Relative unceratinty in line strength",
+            help="Relative Uncertainty in line strength",
             min_value=0,
             max_value=100,
             step=0.1,
@@ -1892,7 +1892,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         ),
         10: st.column_config.NumberColumn(
             "± γ_bath",
-            help="Relative unceratinty in bath gas broadning coeffecient",
+            help="Relative Uncertainty in bath gas broadning coeffecient",
             min_value=0,
             max_value=100,
             step=0.1,
@@ -1900,7 +1900,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         ),
         11: st.column_config.NumberColumn(
             "± γ_self",
-            help="Relative unceratinty in self broadning coeffecient",
+            help="Relative Uncertainty in self broadning coeffecient",
             min_value=0,
             max_value=100,
             step=0.1,
@@ -1908,7 +1908,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         ),
         12: st.column_config.NumberColumn(
             "± n",
-            help="Relative unceratinty in temperature exponents",
+            help="Relative Uncertainty in temperature exponents",
             min_value=0,
             max_value=100,
             step=0.1,
@@ -1916,7 +1916,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         ),
         13: st.column_config.NumberColumn(
             "± δ",
-            help="Unceratinty in pressure shift parameter (cm-1.atm-1)",
+            help="Uncertainty in pressure shift parameter (cm-1.atm-1)",
             min_value=1E-6,
             max_value=1,
             step=1E-6,
@@ -1932,7 +1932,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         ),
         15: st.column_config.NumberColumn(
             "± δ_s",
-            help="Unceratinty in self pressure shift parameter (cm-1.atm-1)",
+            help="Uncertainty in self pressure shift parameter (cm-1.atm-1)",
             min_value=1E-6,
             max_value=1,
             step=1E-6,
