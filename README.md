@@ -1,4 +1,5 @@
-# How to Clone and Run MCSpectra from GitHub
+# How to Clone and Run MCSpectra locally
+MCSpectra is online at www.mcspectra.com but can be cloned and run locally through the following steps:
 ## Step 1: Install Prerequisites
 Before you start, ensure you have the following installed:
 1.	**Python (3.8 or later)**
