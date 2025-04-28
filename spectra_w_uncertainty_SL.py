@@ -22,9 +22,16 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
     menu_items={
-        'Get Help': 'https://www.kaust.edu.sa',
+        'Get Help': 'https://doi.org/10.1016/j.jqsrt.2025.109500',
         'Report a bug': "mailto:ihsan.farouki@kaust.edu.sa",
-        'About': "# MCSpectra (v1.0): Absorbance and emission spectra simulations with uncertainty quantification"
+        'About': """
+        **MCSpectra (v1.0): an online tool for line-by-line spectral simulations with uncertainty quantification.**
+        
+        For more information please refer to our JQSRT publication: https://doi.org/10.1016/j.jqsrt.2025.109500
+
+        -------------------------
+
+        """
     }
 )
 
