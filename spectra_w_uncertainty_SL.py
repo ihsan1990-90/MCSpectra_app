@@ -5,15 +5,18 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm, skew, median_abs_deviation
 from voigtfwhm import voigtfwhm
 from voigtfwhm_fast import voigtfwhm_fast
+from streamlit_javascript import st_javascript
+import requests
+from datetime import datetime
 import io
 import base64
 import uuid
-import datetime
 import csv
 import time
-import gc
-import sys
-import math
+#import datetime
+#import gc
+#import sys
+#import math
 
 # General page configuration
 st.set_page_config(
@@ -30,10 +33,38 @@ st.set_page_config(
         For more information please refer to our JQSRT publication: https://doi.org/10.1016/j.jqsrt.2025.109500
 
         -------------------------
+        **Privacy Disclaimer**
+
+        This app collects and stores anonymous geographic data (e.g., country or city) derived from your IP address for the sole purpose of understanding usage patterns and improving the user experience.
+        Your IP address is not stored or retained in any form.
+
+        -------------------------
 
         """
     }
 )
+
+# Get user's public IP via JS
+ip = st_javascript("""
+    async () => {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        return data.ip;
+    }
+""")
+
+print(ip)
+
+# Lookup geolocation based on IP
+
+def get_location(ip_address):
+    try:
+        response = requests.get(f"https://ipapi.co/{ip_address}/json/")
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        st.error(f"Error getting location: {e}")
+    return None
 
 
 # paths to logos
@@ -2044,7 +2075,28 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
             st.sidebar.info('Total computation time: '+str(round(time.time() - t,2))+' seconds.', icon="ℹ️")
 
 
-        simulation_info = [datetime.datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode]
+        if ip:
+            location = get_location(ip)
+            timestamp = datetime.now().isoformat()
+
+            # Display the information
+            st.success(f"Your IP: {ip}")
+            if location:
+                print(location)
+                # Save to a variable
+                userCity = location.get('city')
+                userCountry = location.get('country_name')
+
+            else:
+                userCity = 'NA'
+                userCountry = 'NA'
+                print("Could not retrieve location data.")
+        else:
+            userCity = 'NA'
+            userCountry = 'NA'
+            print("Fetching your IP address...")
+
+        simulation_info = [datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode,userCity,userCountry]
         #print(simulation_info)
         with open('simulation_history.csv','a') as fd:
             #fd.write(np.array2string(simulation_info))
