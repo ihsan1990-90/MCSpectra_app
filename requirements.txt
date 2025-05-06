@@ -4,4 +4,3 @@ numpy
 matplotlib
 scipy
 streamlit_js_eval
-streamlit-javascript
