@@ -48,6 +48,7 @@ st.set_page_config(
 )
 
 LOG_FILE = "/var/log/caddy/access.log"
+#LOG_FILE = "access.json"
 
 def read_last_ip_and_delete_log():
     try:
@@ -56,6 +57,7 @@ def read_last_ip_and_delete_log():
             if lines:
                 last_line = lines[-1]
                 ip = json.loads(last_line)["request"]["remote_ip"]
+                print(ip)
                 f.seek(0)
                 f.truncate()  # Clear the file
 
@@ -2087,7 +2089,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
             location = get_location(ip_result)
 
             if location:
-                print(location)
+                
                 # Save to a variable
                 userCity = location.get('city')
                 userCountry = location.get('country_name')
@@ -2102,9 +2104,9 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
             print("Could not retrieve IP address.")
 
 
-        simulation_info = [datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode,userCity,userCountry]
+        simulation_info = [datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode,userCity,userCountry,ip_result]
         #print(simulation_info)
-        with open('simulation_history.csv','a') as fd:
+        with open('simulation_history.csv','a', encoding="utf-8") as fd:
             #fd.write(np.array2string(simulation_info))
             writer = csv.writer(fd)
             writer.writerow(simulation_info)
