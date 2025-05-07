@@ -2104,7 +2104,7 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
             print("Could not retrieve IP address.")
 
 
-        simulation_info = [datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode,userCity,userCountry,ip_result]
+        simulation_info = [datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode,userCity,userCountry]
         #print(simulation_info)
         with open('simulation_history.csv','a', encoding="utf-8") as fd:
             #fd.write(np.array2string(simulation_info))
