@@ -7,12 +7,14 @@ from voigtfwhm import voigtfwhm
 from voigtfwhm_fast import voigtfwhm_fast
 from datetime import datetime
 #from streamlit_javascript import st_javascript
-#import requests
+import requests
 import io
 import base64
 import uuid
 import csv
 import time
+import json
+import os
 #import datetime
 #import gc
 #import sys
@@ -33,37 +35,44 @@ st.set_page_config(
         For more information please refer to our JQSRT publication: https://doi.org/10.1016/j.jqsrt.2025.109500
 
         -------------------------
+        
+        **Privacy Notice**
+        
+        This service collects and stores anonymous geographic data (i.e., country and city) derived from the visitor IP address for the sole purpose of understanding usage patterns.
+        IP addresses are not stored or retained in any form.
+
+        -------------------------
 
         """
     }
 )
 
-#st_javascript("""
-#    console.log("JavaScript is running!");  // Debugging log
-#""")
-#
-## Get user's public IP via JS
-#ip = st_javascript("""
-#    async () => {
-#        const res = await fetch('https://api.ipify.org?format=json');
-#        const data = await res.json();
-#        console.log(data.ip);
-#        return data.ip;
-#    }
-#""")
-#
-#print(ip)
+LOG_FILE = "/var/log/caddy/access.log"
 
-# Lookup geolocation based on IP
+def read_last_ip_and_delete_log():
+    try:
+        with open(LOG_FILE, 'r+') as f:
+            lines = f.readlines()
+            if lines:
+                last_line = lines[-1]
+                ip = json.loads(last_line)["request"]["remote_ip"]
+                f.seek(0)
+                f.truncate()  # Clear the file
 
-#def get_location(ip_address):
-#    try:
-#        response = requests.get(f"https://ipapi.co/{ip_address}/json/")
-#        if response.status_code == 200:
-#            return response.json()
-#    except Exception as e:
-#        st.error(f"Error getting location: {e}")
-#    return None
+        return ip
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def get_location(ip_address):
+    try:
+        response = requests.get(f"https://ipapi.co/{ip_address}/json/")
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        st.error(f"Error getting location: {e}")
+    return None
+
 
 
 # paths to logos
@@ -2073,29 +2082,27 @@ def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_br
         with st.sidebar:
             st.sidebar.info('Total computation time: '+str(round(time.time() - t,2))+' seconds.', icon="ℹ️")
 
+        ip_result = read_last_ip_and_delete_log()
+        if not(ip_result.startswith("Error:")):
+            location = get_location(ip_result)
 
-        #if ip:
-        #    location = get_location(ip)
-        #    timestamp = datetime.now().isoformat()
-#
-        #    # Display the information
-        #    st.success(f"Your IP: {ip}")
-        #    if location:
-        #        print(location)
-        #        # Save to a variable
-        #        userCity = location.get('city')
-        #        userCountry = location.get('country_name')
-#
-        #    else:
-        #        userCity = 'NA'
-        #        userCountry = 'NA'
-        #        print("Could not retrieve location data.")
-        #else:
-        #    userCity = 'NA'
-        #    userCountry = 'NA'
-        #    print("Fetching your IP address...")
+            if location:
+                print(location)
+                # Save to a variable
+                userCity = location.get('city')
+                userCountry = location.get('country_name')
 
-        simulation_info = [datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode]
+            else:
+                userCity = 'NA'
+                userCountry = 'NA'
+                print("Could not retrieve location data.")
+        else:
+            userCity = 'NA'
+            userCountry = 'NA'
+            print("Could not retrieve IP address.")
+
+
+        simulation_info = [datetime.now(),selected_species,T,P,mole_fraction,L,wnstart,wnend,wnres,n_simulations,s0_min,st.session_state.manual_control,conv_test,st.session_state.survey_mode,userCity,userCountry]
         #print(simulation_info)
         with open('simulation_history.csv','a') as fd:
             #fd.write(np.array2string(simulation_info))
