@@ -400,7 +400,7 @@ elif st.session_state.selected_species == 'NO2':
     broadener_options = ['Air']
     self_shift_available = False
 
-with open('simulation_history.csv') as f:
+with open('simulation_history.csv', 'r', encoding='utf-8') as f:
     row_count = sum(1 for line in f)
 
 #history = pd.read_csv('simulation_history.csv', on_bad_lines='skip')
@@ -1525,7 +1525,7 @@ def std_deviation_with_iterations(spectra,spectrum_mean_parameters,x_limited):
     
     #np.savetxt('sample_results/convergence_for_analysis.csv', std_residuals, delimiter=',')
 
-    fig_3, ax = plt.subplots()
+    fig_3, ax = plt.subplots(figsize=(8, 4))
     #print(std_residuals)
     ax.plot(range(n_simulations), std_residuals,color="#ECBC7A")
     ax.set_xlabel('Iteration')
@@ -1549,7 +1549,7 @@ def uncertainty_PDF(convergence_frequency,spectra,spectrum_mean_parameters,skewn
     
     N_points = len(spectra[std_index])
     n_bins = 50
-    fig_4, ax = plt.subplots()
+    fig_4, ax = plt.subplots(figsize=(8, 4))
     #print(std_residuals)
     if simulation_type == 'Absorbance':
         ax.set_xlabel('Absorbance')
@@ -1576,7 +1576,7 @@ def uncertainty_PDF(convergence_frequency,spectra,spectrum_mean_parameters,skewn
 # function which plots the figure which shows the absorbance/emission spectrum along with confidence interval
 @st.cache_resource(show_spinner=False,max_entries=1)
 def plot_MC_spectra(spectra, spectrum_mean_parameters, P90, P10, xaxis_start,xaxis_end,x_limited):
-    fig_1, ax = plt.subplots()
+    fig_1, ax = plt.subplots(figsize=(8, 4))
     #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
     ax.set_xlabel('Wavenumbers (cm-1)')
     if simulation_type == 'Absorbance':
@@ -1602,8 +1602,10 @@ def plot_MC_spectra(spectra, spectrum_mean_parameters, P90, P10, xaxis_start,xax
     # adjust a-axis zoom based on the choice of the user
     ax.set_xlim(xaxis_start,xaxis_end)
     #round(time.time() - t,2)
+
     temp_index_start = np.where(np.round(x_limited,2) == np.round(xaxis_start,2))[0]
-    temp_index_end = np.where(np.round(x_limited,2) == np.round(xaxis_end-wnres,2))[0]
+    temp_index_end = np.where(np.round(x_limited,2) == np.round(xaxis_end-2*wnres,2))[0]
+
 
     # scale -y-axis automatically
     if simulation_type == 'Transmittance':
@@ -1634,7 +1636,7 @@ def wl2wn(x):
 # plots mean spectrum for survey mode
 def plot_mean_spectrum(spectrum_mean_parameters, xaxis_start,xaxis_end,x_limited):
     
-    fig_1, ax = plt.subplots()
+    fig_1, ax = plt.subplots(figsize=(8, 4))
     #ax.set_title('Absorbance based on mean parameters and '+str(n_simulations)+' simulated spectra')
     ax.set_xlabel('Wavenumbers (cm-1)')
     if simulation_type == 'Absorbance':
@@ -1652,7 +1654,7 @@ def plot_mean_spectrum(spectrum_mean_parameters, xaxis_start,xaxis_end,x_limited
     ax.set_xlim(xaxis_start,xaxis_end)
 
     temp_index_start = np.where(np.round(x_limited,2) == np.round(xaxis_start,2))[0]
-    temp_index_end = np.where(np.round(x_limited,2) == np.round(xaxis_end-wnres,2))[0]
+    temp_index_end = np.where(np.round(x_limited,2) == np.round(xaxis_end-2*wnres,2))[0]
     
     if simulation_type == 'Transmittance':
         ax.set_ylim(0,1)
@@ -1674,7 +1676,7 @@ def plot_mean_spectrum(spectrum_mean_parameters, xaxis_start,xaxis_end,x_limited
 # relative uncertainty and skewness plots
 @st.cache_resource(show_spinner=False,max_entries=1)
 def plot_uncertainty(relative_uncertainty,skewness, PCV, RMAD, xaxis_start,xaxis_end,x_limited):
-    fig_2, ax1 = plt.subplots()
+    fig_2, ax1 = plt.subplots(figsize=(8, 4))
 
     color = (1,1,1,1)
     ax1.set_xlabel('Wavenumbers (cm-1)')
