@@ -124,6 +124,15 @@ def xaxis_validation():
         st.session_state.xaxis_start = st.session_state.wn_start
         st.session_state.xaxis_end = st.session_state.wn_end
 
+def wn_limits(wn_region):
+    match wn_region:
+        case "Mid infrared":
+            return [500.0, 4000.0]
+        case "Near infrared":
+            return [4000.0, 12500.0]
+        case "UV-Vis":
+            return [12500.0, 50000.0]
+
 # 'dek' is a session state variable linked to the manual line parameter control table.
 # this key helps in managing the line list within the (manual control) line parameter table
 # the following conditional initiates the session state variable
@@ -131,99 +140,121 @@ def xaxis_validation():
 if 'dek' not in st.session_state:
     st.session_state.dek = str(uuid.uuid4())
 
+def change_selected_species():
+    st.session_state.selected_species = 'CH4'
+    st.session_state.selected_broadener = 'Air'
+    if not(hasattr(st.session_state,'wn_region')):
+        change_wn_range("Mid infrared")
+    else:
+        change_wn_range(st.session_state.wn_region)
+
 # 'change_wn_range()' adjusts the simulation wavelength range when the selected species is changed
 # the simulation range is adjusted to a region which bears interesting features
-def change_wn_range():
-    if st.session_state.selected_species == 'CH4':
-        st.session_state.wn_start = 1331
-        st.session_state.wn_end = 1334
-    elif st.session_state.selected_species == '(12)CH4':
-        st.session_state.wn_start = 1331
-        st.session_state.wn_end = 1334
-    elif st.session_state.selected_species == 'H2(16)O':
-        st.session_state.wn_start = 3742
-        st.session_state.wn_end = 3747
-    elif st.session_state.selected_species == 'H2O':
-        st.session_state.wn_start = 3742
-        st.session_state.wn_end = 3747
-    elif st.session_state.selected_species == 'H2S':
-        st.session_state.wn_start = 3800
-        st.session_state.wn_end = 3810
-    elif st.session_state.selected_species == 'H2CO':
-        st.session_state.wn_start = 1750
-        st.session_state.wn_end = 1760
-    elif st.session_state.selected_species == 'H2O2':
-        st.session_state.wn_start = 1200
-        st.session_state.wn_end = 1210
-    elif st.session_state.selected_species == 'HCl':
-        st.session_state.wn_start = 3106
-        st.session_state.wn_end = 3110
-    elif st.session_state.selected_species == 'HCN':
-        st.session_state.wn_start = 3350
-        st.session_state.wn_end = 3360
-    elif st.session_state.selected_species == 'CO2':
-        st.session_state.wn_start = 2300
-        st.session_state.wn_end = 2305
-    elif st.session_state.selected_species == '(12)CO2':
-        st.session_state.wn_start = 2300
-        st.session_state.wn_end = 2305
-    elif st.session_state.selected_species == '(13)CO2':
-        st.session_state.wn_start = 2300
-        st.session_state.wn_end = 2305
-    elif st.session_state.selected_species == '(14)N2O':
-        st.session_state.wn_start = 1285
-        st.session_state.wn_end = 1290
-    elif st.session_state.selected_species == 'N2O':
-        st.session_state.wn_start = 1285
-        st.session_state.wn_end = 1290
-    elif st.session_state.selected_species == 'NO':
-        st.session_state.wn_start = 1810
-        st.session_state.wn_end = 1820
-    elif st.session_state.selected_species == '(12)CO':
-        st.session_state.wn_start = 2000
-        st.session_state.wn_end = 2010
-    elif st.session_state.selected_species == 'CO':
-        st.session_state.wn_start = 2000
-        st.session_state.wn_end = 2010
-    elif st.session_state.selected_species == 'CS2':
-        st.session_state.wn_start = 1500
-        st.session_state.wn_end = 1510
-    elif st.session_state.selected_species == '(14)NH3':
-        st.session_state.wn_start = 850
-        st.session_state.wn_end = 856
-    elif st.session_state.selected_species == 'NH3':
-        st.session_state.wn_start = 850
-        st.session_state.wn_end = 856
-    elif st.session_state.selected_species == '(12)C2H6':
-        st.session_state.wn_start = 3009
-        st.session_state.wn_end = 3012
-    elif st.session_state.selected_species == 'C2H6':
-        st.session_state.wn_start = 3009
-        st.session_state.wn_end = 3012
-    elif st.session_state.selected_species == 'C2H2':
-        st.session_state.wn_start = 700
-        st.session_state.wn_end = 710
-    elif st.session_state.selected_species == 'C2H4':
-        st.session_state.wn_start = 906
-        st.session_state.wn_end = 910
-    elif st.session_state.selected_species == 'CH3OH':
-        st.session_state.wn_start = 1030
-        st.session_state.wn_end = 1035
-    elif st.session_state.selected_species == 'O3':
-        st.session_state.wn_start = 1010    
-        st.session_state.wn_end = 1015
-    elif st.session_state.selected_species == 'OH':
-        st.session_state.wn_start = 3300    
-        st.session_state.wn_end = 3310
-    elif st.session_state.selected_species == 'HF':
-        st.session_state.wn_start = 3876
-        st.session_state.wn_end = 3879
-    elif st.session_state.selected_species == 'SO2':
-        st.session_state.wn_start = 1135
-        st.session_state.wn_end = 1140
-    elif st.session_state.selected_species == 'NO2':
-        st.session_state.wn_start = 1600
-        st.session_state.wn_end = 1605
+def change_wn_range(wn_region):
+    match wn_region:
+        case "Mid infrared":
+            if not(hasattr(st.session_state,'selected_species')):
+                print('** no selected_species attribute **')
+                st.session_state.wn_start = 1331
+                st.session_state.wn_end = 1334
+            elif st.session_state.selected_species == 'CH4':
+                st.session_state.wn_start = 1331
+                st.session_state.wn_end = 1334
+            elif st.session_state.selected_species == '(12)CH4':
+                st.session_state.wn_start = 1331
+                st.session_state.wn_end = 1334
+            elif st.session_state.selected_species == 'H2(16)O':
+                st.session_state.wn_start = 3742
+                st.session_state.wn_end = 3747
+            elif st.session_state.selected_species == 'H2O':
+                st.session_state.wn_start = 3742
+                st.session_state.wn_end = 3747
+            elif st.session_state.selected_species == 'H2S':
+                st.session_state.wn_start = 3800
+                st.session_state.wn_end = 3810
+            elif st.session_state.selected_species == 'H2CO':
+                st.session_state.wn_start = 1750
+                st.session_state.wn_end = 1760
+            elif st.session_state.selected_species == 'H2O2':
+                st.session_state.wn_start = 1200
+                st.session_state.wn_end = 1210
+            elif st.session_state.selected_species == 'HCl':
+                st.session_state.wn_start = 3106
+                st.session_state.wn_end = 3110
+            elif st.session_state.selected_species == 'HCN':
+                st.session_state.wn_start = 3350
+                st.session_state.wn_end = 3360
+            elif st.session_state.selected_species == 'CO2':
+                st.session_state.wn_start = 2300
+                st.session_state.wn_end = 2305
+            elif st.session_state.selected_species == '(12)CO2':
+                st.session_state.wn_start = 2300
+                st.session_state.wn_end = 2305
+            elif st.session_state.selected_species == '(13)CO2':
+                st.session_state.wn_start = 2300
+                st.session_state.wn_end = 2305
+            elif st.session_state.selected_species == '(14)N2O':
+                st.session_state.wn_start = 1285
+                st.session_state.wn_end = 1290
+            elif st.session_state.selected_species == 'N2O':
+                st.session_state.wn_start = 1285
+                st.session_state.wn_end = 1290
+            elif st.session_state.selected_species == 'NO':
+                st.session_state.wn_start = 1810
+                st.session_state.wn_end = 1820
+            elif st.session_state.selected_species == '(12)CO':
+                st.session_state.wn_start = 2000
+                st.session_state.wn_end = 2010
+            elif st.session_state.selected_species == 'CO':
+                st.session_state.wn_start = 2000
+                st.session_state.wn_end = 2010
+            elif st.session_state.selected_species == 'CS2':
+                st.session_state.wn_start = 1500
+                st.session_state.wn_end = 1510
+            elif st.session_state.selected_species == '(14)NH3':
+                st.session_state.wn_start = 850
+                st.session_state.wn_end = 856
+            elif st.session_state.selected_species == 'NH3':
+                st.session_state.wn_start = 850
+                st.session_state.wn_end = 856
+            elif st.session_state.selected_species == '(12)C2H6':
+                st.session_state.wn_start = 3009
+                st.session_state.wn_end = 3012
+            elif st.session_state.selected_species == 'C2H6':
+                st.session_state.wn_start = 3009
+                st.session_state.wn_end = 3012
+            elif st.session_state.selected_species == 'C2H2':
+                st.session_state.wn_start = 700
+                st.session_state.wn_end = 710
+            elif st.session_state.selected_species == 'C2H4':
+                st.session_state.wn_start = 906
+                st.session_state.wn_end = 910
+            elif st.session_state.selected_species == 'CH3OH':
+                st.session_state.wn_start = 1030
+                st.session_state.wn_end = 1035
+            elif st.session_state.selected_species == 'O3':
+                st.session_state.wn_start = 1010    
+                st.session_state.wn_end = 1015
+            elif st.session_state.selected_species == 'OH':
+                st.session_state.wn_start = 3300    
+                st.session_state.wn_end = 3310
+            elif st.session_state.selected_species == 'HF':
+                st.session_state.wn_start = 3876
+                st.session_state.wn_end = 3879
+            elif st.session_state.selected_species == 'SO2':
+                st.session_state.wn_start = 1135
+                st.session_state.wn_end = 1140
+            elif st.session_state.selected_species == 'NO2':
+                st.session_state.wn_start = 1600
+                st.session_state.wn_end = 1605
+        case "Near infrared":
+            if st.session_state.selected_species == 'CH4':
+                st.session_state.wn_start = 6075
+                st.session_state.wn_end = 6080
+        case "UV-Vis":
+            if st.session_state.selected_species == 'CH4':
+                st.session_state.wn_start = 12500
+                st.session_state.wn_end = 12505    
     # adjust x-axis range along with the simulation range
     st.session_state.xaxis_start = st.session_state.wn_start
     st.session_state.xaxis_end = st.session_state.wn_end
@@ -296,12 +327,17 @@ def molar_mass():
     elif st.session_state.selected_species == 'SO2':
         M = 64.066 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'NO2':
-        M = 46.0055 # Molar mass of CH4 (g/mol)     
+        M = 46.0055 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == None:
+        M = 0     
     
     return M
 
-# list of species for which species are available in the /HITRAN_data        
-species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H4','C2H6','(12)C2H6','CH3OH','CS2','H2O','H2CO' ,'H2S', 'H2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
+
+# if 'wn_region' not in st.session_state:
+#     print('** MIR **')
+#     wn_region = "Mid infrared"
+
 
 # pre-programmed list of broadeners for different species
 # also indicates whether self-shift parameter data is available 
@@ -399,6 +435,9 @@ elif st.session_state.selected_species == 'SO2':
 elif st.session_state.selected_species == 'NO2':
     broadener_options = ['Air']
     self_shift_available = False
+elif st.session_state.selected_species == None:
+    broadener_options = ['Air']
+    self_shift_available = False
 
 with open('simulation_history.csv', 'r', encoding='utf-8') as f:
     row_count = sum(1 for line in f)
@@ -412,15 +451,37 @@ with st.sidebar:
     # basic simulation controls within a collapsable container
     with st.expander('Basic simulation controls', False):
         survey_mode = st.toggle("Survey mode", help='Simulate spectra over a broad wavenumber range without uncertainty quantification.', key='survey_mode')
+        with st.container(border=True):
+            wn_region = st.radio(
+                "***Spectral region***",
+                ["Mid infrared","Near infrared","UV-Vis"],
+                captions=[
+                    "500 - 4000 cm-1",
+                    "4000 - 12500 cm-1",
+                    "12500 - 50000 cm-1",
+                ],
+                on_change=change_selected_species(),
+                key='wn_region'
+            )
         simulation_type = st.selectbox("Spectrum type", ['Absorbance', 'Transmittance','Emission'], 0,key='simulation_type')
-        selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
+        # list of species for which species are available in the /HITRAN_data
+        match wn_region:
+            case "Mid infrared":        
+                species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H4','C2H6','(12)C2H6','CH3OH','CS2','H2O','H2CO' ,'H2S', 'H2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
+            case "Near infrared":
+                species_options = ['CH4']
+            case "UV-Vis":
+                species_options = ['CH4']
+
+        selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range(wn_region),key='selected_species')
         selected_broadener = st.selectbox("Bath-gas", broadener_options, 0,key='selected_broadener')
         temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
         pressure = st.number_input("Pressure (atm)", min_value=0.001, max_value=100.00, value=1.00, step=0.2)
         molefraction = st.number_input("Mole Fraction", min_value=0.00, max_value=1.00, value=0.01, step=0.001, format="%.3e")
         pathlength = st.number_input('Pathlength (cm)', min_value=1, max_value=50000, step=1, value=10)
-        wnstart = st.number_input('Wavenumbers start (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1331.00, on_change=change_xaxis_range, key='wn_start')
-        wnend = st.number_input('Wavenumbers end (cm-1)', min_value=500.00, max_value=5000.00, step=1.00, value=1334.00, on_change=change_xaxis_range, key='wn_end')
+        # print(wn_limits(wn_region)[0])
+        wnstart = st.number_input('Wavenumbers start (cm-1)', min_value=wn_limits(wn_region)[0], max_value=wn_limits(wn_region)[1], step=1.00, on_change=change_xaxis_range, key='wn_start')
+        wnend = st.number_input('Wavenumbers end (cm-1)', min_value=wn_limits(wn_region)[0], max_value=wn_limits(wn_region)[1], step=1.00, on_change=change_xaxis_range, key='wn_end')
         wnres = st.number_input('Resolution (cm-1)', min_value=0.001, max_value=0.1, step=0.001, value=0.005, key='wn_res', format="%.3f")
     # plotting controls
     # useful for zooming in and out on the x-axis
@@ -494,232 +555,252 @@ if st.session_state.exp_unc:
 
 # import HITRAN and TIPS (total internal partition sums) data for the selected species
 @st.cache_resource(show_spinner=True,max_entries=1)
-def import_data(selected_species):
+def import_data(selected_species, wn_region):
     # print('importing data')
+    match wn_region:
+        case "Mid infrared":
+            print('*** MIR *')
+            if selected_species == '(12)CH4':
+                selected_species_lines = pd.read_csv('HITRAN_data/12CH4_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q32_12CH4.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.988274
+                rotational_constant = 5.24 #cm-1
+            elif selected_species == 'CH4':
+                selected_species_lines = pd.read_csv('HITRAN_data/CH4_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_CH4_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 32
+                isotopologue_abundance = 1
+                rotational_constant = 5.24 #cm-1
+            elif selected_species == 'H2(16)O':
+                selected_species_lines = pd.read_csv('HITRAN_data/H216O_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q1_H2O16.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.997317
+                rotational_constant = 9.28 #cm-1
+            elif selected_species == 'H2O':
+                selected_species_lines = pd.read_csv('HITRAN_data/H2O_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_H2O_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 1
+                isotopologue_abundance = 1
+                rotational_constant = 9.28 #cm-1
+            elif selected_species == 'H2S':
+                selected_species_lines = pd.read_csv('HITRAN_data/H2S_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_H2S_natural.csv', delimiter=',')
+                num_of_isotopologues = 3
+                first_isotopologue = 81
+                isotopologue_abundance = 1
+                rotational_constant = 9.035 #cm-1
+            elif selected_species == 'H2CO':
+                selected_species_lines = pd.read_csv('HITRAN_data/H2CO_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_H2CO_natural.csv', delimiter=',')
+                num_of_isotopologues = 3
+                first_isotopologue = 64
+                isotopologue_abundance = 1
+                rotational_constant = 1.295 #cm-1
+            elif selected_species == 'H2O2':
+                selected_species_lines = pd.read_csv('HITRAN_data/H2O2_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_H2O2_natural.csv', delimiter=',')
+                num_of_isotopologues = 1
+                first_isotopologue = 75
+                isotopologue_abundance = 1
+                rotational_constant = 0.874 #cm-1
+            elif selected_species == 'CO2':
+                selected_species_lines = pd.read_csv('HITRAN_data/CO2_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_CO2_natural.csv', delimiter=',')
+                num_of_isotopologues = 3
+                first_isotopologue = 7
+                isotopologue_abundance = 1
+                rotational_constant = 0.39 #cm-1
+            elif selected_species == 'CS2':
+                selected_species_lines = pd.read_csv('HITRAN_data/CS2_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_CS2_natural.csv', delimiter=',')
+                num_of_isotopologues = 4
+                first_isotopologue = 131
+                isotopologue_abundance = 1
+                rotational_constant = 0.109 #cm-1
+            elif selected_species == '(12)CO2':
+                selected_species_lines = pd.read_csv('HITRAN_data/12CO2_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q7_12CO2.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.984204
+                rotational_constant = 0.39 #cm-1
+            elif selected_species == '(13)CO2':
+                selected_species_lines = pd.read_csv('HITRAN_data/13CO2_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q8_13CO2.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.0110574
+                rotational_constant = 0.39 #cm-1
+            elif selected_species == '(14)N2O':
+                selected_species_lines = pd.read_csv('HITRAN_data/14N2O_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q21_14N2O.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.990333
+                rotational_constant = 0.42 #cm-1
+            elif selected_species == 'N2O':
+                selected_species_lines = pd.read_csv('HITRAN_data/N2O_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_N2O_natural.csv', delimiter=',')
+                num_of_isotopologues = 4
+                first_isotopologue = 21
+                isotopologue_abundance = 1
+                rotational_constant = 0.42 #cm-1
+            elif selected_species == 'NO':
+                selected_species_lines = pd.read_csv('HITRAN_data/NO_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_NO_natural.csv', delimiter=',')
+                num_of_isotopologues = 3
+                first_isotopologue = 39
+                isotopologue_abundance = 1
+                rotational_constant = 1.7 #cm-1
+            elif selected_species == '(12)CO':
+                selected_species_lines = pd.read_csv('HITRAN_data/12CO_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q26_12CO.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.986544
+                rotational_constant = 1.93 #cm-1
+            elif selected_species == 'CO':
+                selected_species_lines = pd.read_csv('HITRAN_data/CO_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_CO_natural.csv', delimiter=',')
+                num_of_isotopologues = 3
+                first_isotopologue = 26
+                isotopologue_abundance = 1
+                rotational_constant = 1.93 #cm-1
+            elif selected_species == '(14)NH3':
+                selected_species_lines = pd.read_csv('HITRAN_data/14NH3_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q45_14NH3.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.995872
+                rotational_constant = 9.93 #cm-1
+            elif selected_species == 'NH3':
+                selected_species_lines = pd.read_csv('HITRAN_data/NH3_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_NH3_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 45
+                isotopologue_abundance = 1
+                rotational_constant = 9.93 #cm-1
+            elif selected_species == '(12)C2H6':
+                selected_species_lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 0.976990
+                rotational_constant = 2.86 #cm-1
+            elif selected_species == 'C2H6':
+                selected_species_lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 1
+                rotational_constant = 2.86 #cm-1
+            elif selected_species == 'C2H2':
+                selected_species_lines = pd.read_csv('HITRAN_data/C2H2_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_C2H2_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 76
+                isotopologue_abundance = 1
+                rotational_constant = 1.1638 #cm-1
+            elif selected_species == 'C2H4':
+                selected_species_lines = pd.read_csv('HITRAN_data/C2H4_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_C2H4_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 90
+                isotopologue_abundance = 1
+                rotational_constant = 1.0012 #cm-1
+            elif selected_species == 'O3':
+                selected_species_lines = pd.read_csv('HITRAN_data/O3_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_O3_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 16
+                isotopologue_abundance = 1
+                rotational_constant = 0.45 #cm-1
+            elif selected_species == 'OH':
+                selected_species_lines = pd.read_csv('HITRAN_data/OH_natural_lines_formatted.csv').values
+                #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
+                tips = np.genfromtxt('HITRAN_data/q_OH_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 48
+                isotopologue_abundance = 1
+                rotational_constant = 18.91 #cm-1
+            elif selected_species == 'HF':
+                selected_species_lines = pd.read_csv('HITRAN_data/HF_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_HF_natural.csv', delimiter=',')
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 1
+                rotational_constant = 20.96 #cm-1
+            elif selected_species == 'HCl':
+                selected_species_lines = pd.read_csv('HITRAN_data/HCl_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_HCl_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 52
+                isotopologue_abundance = 1
+                rotational_constant = 10.44 #cm-1
+            elif selected_species == 'HCN':
+                selected_species_lines = pd.read_csv('HITRAN_data/HCN_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_HCN_natural.csv', delimiter=',')
+                num_of_isotopologues = 3
+                first_isotopologue = 70
+                isotopologue_abundance = 1
+                rotational_constant = 1.478 #cm-1
+            elif selected_species == 'CH3OH':
+                selected_species_lines = pd.read_csv('HITRAN_data/CH3OH_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_CH3OH_natural.csv', delimiter=',')
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 1
+                rotational_constant = 4.26 #cm-1
+            elif selected_species == 'SO2':
+                selected_species_lines = pd.read_csv('HITRAN_data/SO2_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_SO2_natural.csv', delimiter=',')
+                num_of_isotopologues = 3
+                first_isotopologue = 42
+                isotopologue_abundance = 1
+                rotational_constant = 0.001451 #cm-1
+            elif selected_species == 'NO2':
+                selected_species_lines = pd.read_csv('HITRAN_data/NO2_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_NO2_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 44
+                isotopologue_abundance = 1
+                rotational_constant = 8.0012 #cm-1        
+        case "Near infrared":
+            if selected_species == 'CH4':
+                selected_species_lines = pd.read_csv('HITRAN_data/NIR_CH4_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_CH4_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 32
+                isotopologue_abundance = 1
+                rotational_constant = 5.24 #cm-1
+        case "UV-Vis":
+            if selected_species == 'CH4':
+                selected_species_lines = pd.read_csv('HITRAN_data/UV_CH4_natural_lines_formatted.csv').values
+                tips = np.genfromtxt('HITRAN_data/q_CH4_natural.csv', delimiter=',')
+                num_of_isotopologues = 2
+                first_isotopologue = 32
+                isotopologue_abundance = 1
+                rotational_constant = 5.24 #cm-1
 
-    if selected_species == '(12)CH4':
-        selected_species_lines = pd.read_csv('HITRAN_data/12CH4_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q32_12CH4.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.988274
-        rotational_constant = 5.24 #cm-1
-    elif selected_species == 'CH4':
-        selected_species_lines = pd.read_csv('HITRAN_data/CH4_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_CH4_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 32
-        isotopologue_abundance = 1
-        rotational_constant = 5.24 #cm-1
-    elif selected_species == 'H2(16)O':
-        selected_species_lines = pd.read_csv('HITRAN_data/H216O_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q1_H2O16.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.997317
-        rotational_constant = 9.28 #cm-1
-    elif selected_species == 'H2O':
-        selected_species_lines = pd.read_csv('HITRAN_data/H2O_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_H2O_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 1
-        isotopologue_abundance = 1
-        rotational_constant = 9.28 #cm-1
-    elif selected_species == 'H2S':
-        selected_species_lines = pd.read_csv('HITRAN_data/H2S_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_H2S_natural.csv', delimiter=',')
-        num_of_isotopologues = 3
-        first_isotopologue = 81
-        isotopologue_abundance = 1
-        rotational_constant = 9.035 #cm-1
-    elif selected_species == 'H2CO':
-        selected_species_lines = pd.read_csv('HITRAN_data/H2CO_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_H2CO_natural.csv', delimiter=',')
-        num_of_isotopologues = 3
-        first_isotopologue = 64
-        isotopologue_abundance = 1
-        rotational_constant = 1.295 #cm-1
-    elif selected_species == 'H2O2':
-        selected_species_lines = pd.read_csv('HITRAN_data/H2O2_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_H2O2_natural.csv', delimiter=',')
-        num_of_isotopologues = 1
-        first_isotopologue = 75
-        isotopologue_abundance = 1
-        rotational_constant = 0.874 #cm-1
-    elif selected_species == 'CO2':
-        selected_species_lines = pd.read_csv('HITRAN_data/CO2_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_CO2_natural.csv', delimiter=',')
-        num_of_isotopologues = 3
-        first_isotopologue = 7
-        isotopologue_abundance = 1
-        rotational_constant = 0.39 #cm-1
-    elif selected_species == 'CS2':
-        selected_species_lines = pd.read_csv('HITRAN_data/CS2_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_CS2_natural.csv', delimiter=',')
-        num_of_isotopologues = 4
-        first_isotopologue = 131
-        isotopologue_abundance = 1
-        rotational_constant = 0.109 #cm-1
-    elif selected_species == '(12)CO2':
-        selected_species_lines = pd.read_csv('HITRAN_data/12CO2_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q7_12CO2.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.984204
-        rotational_constant = 0.39 #cm-1
-    elif selected_species == '(13)CO2':
-        selected_species_lines = pd.read_csv('HITRAN_data/13CO2_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q8_13CO2.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.0110574
-        rotational_constant = 0.39 #cm-1
-    elif selected_species == '(14)N2O':
-        selected_species_lines = pd.read_csv('HITRAN_data/14N2O_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q21_14N2O.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.990333
-        rotational_constant = 0.42 #cm-1
-    elif selected_species == 'N2O':
-        selected_species_lines = pd.read_csv('HITRAN_data/N2O_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_N2O_natural.csv', delimiter=',')
-        num_of_isotopologues = 4
-        first_isotopologue = 21
-        isotopologue_abundance = 1
-        rotational_constant = 0.42 #cm-1
-    elif selected_species == 'NO':
-        selected_species_lines = pd.read_csv('HITRAN_data/NO_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_NO_natural.csv', delimiter=',')
-        num_of_isotopologues = 3
-        first_isotopologue = 39
-        isotopologue_abundance = 1
-        rotational_constant = 1.7 #cm-1
-    elif selected_species == '(12)CO':
-        selected_species_lines = pd.read_csv('HITRAN_data/12CO_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q26_12CO.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.986544
-        rotational_constant = 1.93 #cm-1
-    elif selected_species == 'CO':
-        selected_species_lines = pd.read_csv('HITRAN_data/CO_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_CO_natural.csv', delimiter=',')
-        num_of_isotopologues = 3
-        first_isotopologue = 26
-        isotopologue_abundance = 1
-        rotational_constant = 1.93 #cm-1
-    elif selected_species == '(14)NH3':
-        selected_species_lines = pd.read_csv('HITRAN_data/14NH3_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q45_14NH3.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.995872
-        rotational_constant = 9.93 #cm-1
-    elif selected_species == 'NH3':
-        selected_species_lines = pd.read_csv('HITRAN_data/NH3_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_NH3_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 45
-        isotopologue_abundance = 1
-        rotational_constant = 9.93 #cm-1
-    elif selected_species == '(12)C2H6':
-        selected_species_lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 0.976990
-        rotational_constant = 2.86 #cm-1
-    elif selected_species == 'C2H6':
-        selected_species_lines = pd.read_csv('HITRAN_data/12C2H6_lines_formatted.csv').values
-        tips = pd.read_csv('HITRAN_data/q78_12C2H6.csv', sep='\s+').values
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 1
-        rotational_constant = 2.86 #cm-1
-    elif selected_species == 'C2H2':
-        selected_species_lines = pd.read_csv('HITRAN_data/C2H2_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_C2H2_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 76
-        isotopologue_abundance = 1
-        rotational_constant = 1.1638 #cm-1
-    elif selected_species == 'C2H4':
-        selected_species_lines = pd.read_csv('HITRAN_data/C2H4_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_C2H4_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 90
-        isotopologue_abundance = 1
-        rotational_constant = 1.0012 #cm-1
-    elif selected_species == 'O3':
-        selected_species_lines = pd.read_csv('HITRAN_data/O3_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_O3_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 16
-        isotopologue_abundance = 1
-        rotational_constant = 0.45 #cm-1
-    elif selected_species == 'OH':
-        selected_species_lines = pd.read_csv('HITRAN_data/OH_natural_lines_formatted.csv').values
-        #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
-        tips = np.genfromtxt('HITRAN_data/q_OH_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 48
-        isotopologue_abundance = 1
-        rotational_constant = 18.91 #cm-1
-    elif selected_species == 'HF':
-        selected_species_lines = pd.read_csv('HITRAN_data/HF_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_HF_natural.csv', delimiter=',')
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 1
-        rotational_constant = 20.96 #cm-1
-    elif selected_species == 'HCl':
-        selected_species_lines = pd.read_csv('HITRAN_data/HCl_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_HCl_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 52
-        isotopologue_abundance = 1
-        rotational_constant = 10.44 #cm-1
-    elif selected_species == 'HCN':
-        selected_species_lines = pd.read_csv('HITRAN_data/HCN_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_HCN_natural.csv', delimiter=',')
-        num_of_isotopologues = 3
-        first_isotopologue = 70
-        isotopologue_abundance = 1
-        rotational_constant = 1.478 #cm-1
-    elif selected_species == 'CH3OH':
-        selected_species_lines = pd.read_csv('HITRAN_data/CH3OH_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_CH3OH_natural.csv', delimiter=',')
-        num_of_isotopologues = 1
-        first_isotopologue = 0
-        isotopologue_abundance = 1
-        rotational_constant = 4.26 #cm-1
-    elif selected_species == 'SO2':
-        selected_species_lines = pd.read_csv('HITRAN_data/SO2_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_SO2_natural.csv', delimiter=',')
-        num_of_isotopologues = 3
-        first_isotopologue = 42
-        isotopologue_abundance = 1
-        rotational_constant = 0.001451 #cm-1
-    elif selected_species == 'NO2':
-        selected_species_lines = pd.read_csv('HITRAN_data/NO2_natural_lines_formatted.csv').values
-        tips = np.genfromtxt('HITRAN_data/q_NO2_natural.csv', delimiter=',')
-        num_of_isotopologues = 2
-        first_isotopologue = 44
-        isotopologue_abundance = 1
-        rotational_constant = 8.0012 #cm-1
+    
     
     return selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant
 
@@ -1809,10 +1890,10 @@ def find_cut_off_wn(rotational_constant,max_residual,wnstart,wnend,wnres,selecte
 
 #xaxis_validation()
 #print(wn_validation_flag)
-def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_broadener,T,P,mole_fraction,L,calc_method_wofz,simulation_type):
+def main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_broadener,T,P,mole_fraction,L,calc_method_wofz,simulation_type, wn_region):
     t = time.time()
     # import HITRAN data from csv file    
-    selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant = import_data(selected_species)
+    selected_species_lines, tips, num_of_isotopologues, first_isotopologue, isotopologue_abundance, rotational_constant = import_data(selected_species, wn_region)
 
     # 'x_limited' is an array representing the wavenumber range selected by the user
     # used below for interpolating spectra calculated over an extended range
@@ -2143,7 +2224,7 @@ wn_validation_flag, wn_change_flag = wn_validation()
 if wn_validation_flag == 1:
     if not(st.session_state.survey_mode):
         rng = np.random.default_rng()
-    main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_broadener,T,P,mole_fraction,L,calc_method_wofz,simulation_type)
+    main(s0_min,max_residual,selected_species,wnstart, wnend, wnres, selected_broadener,T,P,mole_fraction,L,calc_method_wofz,simulation_type, wn_region)
 elif (wnend - wnstart) == 1990 :
     with open("simulation_history.csv", "rb") as file:
         btn = st.download_button(
