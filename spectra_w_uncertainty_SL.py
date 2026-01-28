@@ -141,22 +141,27 @@ if 'dek' not in st.session_state:
     st.session_state.dek = str(uuid.uuid4())
 
 def change_selected_species():
+    # print(st.session_state.wn_region)
+    # print(st.session_state.get("_prev_wn_region"))
     st.session_state.selected_species = 'CH4'
     st.session_state.selected_broadener = 'Air'
     if not(hasattr(st.session_state,'wn_region')):
-        change_wn_range("Mid infrared")
+        print("** True **")
+        change_wn_range()
     else:
-        change_wn_range(st.session_state.wn_region)
+        print("** False **")
+        
+        change_wn_range()
 
 # 'change_wn_range()' adjusts the simulation wavelength range when the selected species is changed
 # the simulation range is adjusted to a region which bears interesting features
-def change_wn_range(wn_region):
-    match wn_region:
+def change_wn_range():
+    match st.session_state.wn_region:
         case "Mid infrared":
             if not(hasattr(st.session_state,'selected_species')):
-                print('** no selected_species attribute **')
-                st.session_state.wn_start = 1331
-                st.session_state.wn_end = 1334
+               print('** no selected_species attribute **')
+               st.session_state.wn_start = 1331
+               st.session_state.wn_end = 1334
             elif st.session_state.selected_species == 'CH4':
                 st.session_state.wn_start = 1331
                 st.session_state.wn_end = 1334
@@ -248,11 +253,19 @@ def change_wn_range(wn_region):
                 st.session_state.wn_start = 1600
                 st.session_state.wn_end = 1605
         case "Near infrared":
-            if st.session_state.selected_species == 'CH4':
+            if not(hasattr(st.session_state,'selected_species')):
+               print('** no selected_species attribute **')
+               st.session_state.wn_start = 6075
+               st.session_state.wn_end = 6080
+            elif st.session_state.selected_species == 'CH4':
                 st.session_state.wn_start = 6075
                 st.session_state.wn_end = 6080
         case "UV-Vis":
-            if st.session_state.selected_species == 'CH4':
+            if not(hasattr(st.session_state,'selected_species')):
+               print('** no selected_species attribute **')
+               st.session_state.wn_start = 12500
+               st.session_state.wn_end = 12505
+            elif st.session_state.selected_species == 'CH4':
                 st.session_state.wn_start = 12500
                 st.session_state.wn_end = 12505    
     # adjust x-axis range along with the simulation range
@@ -343,8 +356,12 @@ def molar_mass():
 # also indicates whether self-shift parameter data is available 
 # based on the availablility of data in the HITRAN database
 if not(hasattr(st.session_state,'selected_species')):
+    print("selected species attribute not available")
     broadener_options = ['Air','H2O']
     self_shift_available = False
+    st.session_state.selected_species = 'CH4'
+    st.session_state.wn_region = "Mid infrared"
+    change_wn_range()
 elif st.session_state.selected_species == 'CH4':
     broadener_options = ['Air','H2O']
     self_shift_available = False
@@ -451,29 +468,31 @@ with st.sidebar:
     # basic simulation controls within a collapsable container
     with st.expander('Basic simulation controls', False):
         survey_mode = st.toggle("Survey mode", help='Simulate spectra over a broad wavenumber range without uncertainty quantification.', key='survey_mode')
-        with st.container(border=True):
-            wn_region = st.radio(
-                "***Spectral region***",
-                ["Mid infrared","Near infrared","UV-Vis"],
-                captions=[
-                    "500 - 4000 cm-1",
-                    "4000 - 12500 cm-1",
-                    "12500 - 50000 cm-1",
-                ],
-                on_change=change_selected_species(),
-                key='wn_region'
-            )
+        # with st.container(border=True):
+        #     wn_region = st.radio(
+        #         "***Spectral region***",
+        #         ["Mid infrared","Near infrared","UV-Vis"],
+        #         captions=[
+        #             "500 - 4000 cm-1",
+        #             "4000 - 12500 cm-1",
+        #             "12500 - 50000 cm-1",
+        #         ],
+        #         on_change=change_selected_species(),
+        #         key='wn_region'
+        #     )
+        wn_region = st.selectbox("***Spectral region***", ["Mid infrared","Near infrared","UV-Vis"], 0, on_change=change_selected_species, key='wn_region')
         simulation_type = st.selectbox("Spectrum type", ['Absorbance', 'Transmittance','Emission'], 0,key='simulation_type')
         # list of species for which species are available in the /HITRAN_data
-        match wn_region:
+        match st.session_state.wn_region:
             case "Mid infrared":        
-                species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H4','C2H6','(12)C2H6','CH3OH','CS2','H2O','H2CO' ,'H2S', 'H2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']
+                species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H4','C2H6','(12)C2H6','CH3OH','CS2','H2O','H2CO' ,'H2S', 'H2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']                
             case "Near infrared":
-                species_options = ['CH4']
+                species_options = ['CH4']                
             case "UV-Vis":
                 species_options = ['CH4']
 
-        selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range(wn_region),key='selected_species')
+        selected_species = st.selectbox("Species", species_options, 0, on_change=change_wn_range,key='selected_species')
+        
         selected_broadener = st.selectbox("Bath-gas", broadener_options, 0,key='selected_broadener')
         temperature = st.number_input("Temperature (K)", min_value=300, max_value=3000, value=300, step=100)
         pressure = st.number_input("Pressure (atm)", min_value=0.001, max_value=100.00, value=1.00, step=0.2)
@@ -559,7 +578,6 @@ def import_data(selected_species, wn_region):
     # print('importing data')
     match wn_region:
         case "Mid infrared":
-            print('*** MIR *')
             if selected_species == '(12)CH4':
                 selected_species_lines = pd.read_csv('HITRAN_data/12CH4_lines_formatted.csv').values
                 tips = pd.read_csv('HITRAN_data/q32_12CH4.csv', sep='\s+').values
