@@ -174,6 +174,9 @@ def change_wn_range():
             elif st.session_state.selected_species == 'D2(16)O':
                 st.session_state.wn_start = 3742
                 st.session_state.wn_end = 3747
+            elif st.session_state.selected_species == 'HD(16)O':
+                st.session_state.wn_start = 3742
+                st.session_state.wn_end = 3747
             elif st.session_state.selected_species == 'H2O':
                 st.session_state.wn_start = 3742
                 st.session_state.wn_end = 3747
@@ -291,7 +294,9 @@ def molar_mass():
     elif st.session_state.selected_species == 'H2(16)O':
         M = 18 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'D2(16)O':
-        M = 20 # Molar mass of CH4 (g/mol)  
+        M = 20 # Molar mass of CH4 (g/mol)
+    elif st.session_state.selected_species == 'HD(16)O':
+        M = 19 # Molar mass of CH4 (g/mol)   
     elif st.session_state.selected_species == 'H2O':
         M = 18.015 # Molar mass of CH4 (g/mol)
     elif st.session_state.selected_species == 'H2S':
@@ -377,6 +382,9 @@ elif st.session_state.selected_species == 'H2(16)O':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == 'D2(16)O':
+    broadener_options = ['Air']
+    self_shift_available = False
+elif st.session_state.selected_species == 'HD(16)O':
     broadener_options = ['Air']
     self_shift_available = False
 elif st.session_state.selected_species == 'H2O':
@@ -493,7 +501,7 @@ with st.sidebar:
         # list of species for which species are available in the /HITRAN_data
         match st.session_state.wn_region:
             case "Mid infrared":        
-                species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H4','C2H6','(12)C2H6','CH3OH','CS2','H2O','H2CO' ,'H2S', 'H2(16)O', 'D2(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']                
+                species_options = ['CH4', '(12)CH4', 'CO2', '(12)CO2', '(13)CO2','CO','(12)CO','C2H2','C2H4','C2H6','(12)C2H6','CH3OH','CS2','H2O','H2CO' ,'H2S','H2(16)O','D2(16)O','HD(16)O','H2O2','HCl','HCN','HF', 'N2O', '(14)N2O', 'NO','NO2','NH3','(14)NH3','O3','OH','SO2']                
             case "Near infrared":
                 species_options = ['CH4']                
             case "UV-Vis":
@@ -614,6 +622,13 @@ def import_data(selected_species, wn_region):
                 first_isotopologue = 0
                 isotopologue_abundance = 2.419740E-8
                 rotational_constant = 4.85 #cm-1
+            elif selected_species == 'HD(16)O':
+                selected_species_lines = pd.read_csv('HITRAN_data/HD16O_lines_formatted.csv').values
+                tips = pd.read_csv('HITRAN_data/q4_HD16O.csv', sep='\s+').values
+                num_of_isotopologues = 1
+                first_isotopologue = 0
+                isotopologue_abundance = 3.10693E-4
+                rotational_constant = 6.4062 #cm-1
             elif selected_species == 'H2O':
                 selected_species_lines = pd.read_csv('HITRAN_data/H2O_natural_lines_formatted.csv').values
                 #tips = pd.read_csv('HITRAN_data/q_CO2_natural.csv', sep='\s+').values
